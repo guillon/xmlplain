@@ -4,6 +4,7 @@ python:
   - '3.5'
   - '3.6'
 install:
-  - pip install PyYAML
+  - pip install -r requirements.txt
+  - ./setup.py sdist
 script:
   - make check
