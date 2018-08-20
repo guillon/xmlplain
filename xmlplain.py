@@ -48,10 +48,56 @@ and preserve the initial XML content even for non structured XML.
 WARNING: the implementation does not support XML namespaces
 and entity location. If this is found useful, please add an issue.
 
-This module is delivered as part of a source tree with tests, in order
-to run tests, do for instance:
+:Example:
+    >>> print(open("tests/example-1.xml").read(), end='')
+    <example>
+      <doc>This is an example for xmlobj documentation. </doc>
+      <content version="beta">
+        <kind>document</kind>
+        <class>example</class>
+        <structured/>
+        <elements>
+          <item>Elt 1</item>
+          <doc>Elt 2</doc>
+          <item>Elt 3</item>
+          <doc>Elt 4</doc>
+        </elements>
+      </content>
+    </example>
 
-    make -j16 check
+    >>> import xmlplain, yaml, sys
+    >>> root = xmlplain.xml_to_obj(open("tests/example-1.xml"), strip_space=True, fold_dict=True)
+    >>> xmlplain.obj_to_yaml(root, sys.stdout)
+    example:
+      doc: 'This is an example for xmlobj documentation. '
+      content:
+        '@version': beta
+        kind: document
+        class: example
+        structured: ''
+        elements:
+        - item: Elt 1
+        - doc: Elt 2
+        - item: Elt 3
+        - doc: Elt 4
+
+    >>> xmlplain.xml_from_obj(root, sys.stdout)
+    <?xml version="1.0" encoding="UTF-8"?>
+    <example>
+      <doc>This is an example for xmlobj documentation. </doc>
+      <content version="beta">
+        <kind>document</kind>
+        <class>example</class>
+        <structured></structured>
+        <elements>
+          <item>Elt 1</item>
+          <doc>Elt 2</doc>
+          <item>Elt 3</item>
+          <doc>Elt 4</doc>
+        </elements>
+      </content>
+    </example>
+
 
 """
 
@@ -74,10 +120,10 @@ def xml_to_events(inf, evt_receiver=None, quoting=None):
     the start element event.
 
     :param inf: the input stream (passed to xml.sax.parse())
-    :param evt_receiver: a receiver implementing the append()
-    method or None, in which case a new list will be generated
+    :param evt_receiver: a receiver implementing the append() method or None,
+      in which case a new list will be generated
     :param quoting: a mapping str -> str for quoting input content or None,
-    the default is: {"\\r: ""} (i.e. remove all "\\r" from the input)
+      the default is: {"\\r: ""} (i.e. remove all "\\r" from the input)
 
     :return: returns the evt_receiver or the generated list
 
@@ -92,7 +138,7 @@ def xml_to_events(inf, evt_receiver=None, quoting=None):
     - ("#", (whitespace,)) for an ignorable whitespace string
 
     .. warning: namespace events and location events available in xml.sax are
-    ignored from the input stream
+      ignored from the input stream
     .. seealso: xml_from_events(), xml.sax.parse()
     """
     class EventGenerator(xml.sax.ContentHandler):
@@ -138,7 +184,7 @@ def xml_from_events(evts, outf=sys.stdout, encoding='UTF-8', quoting=None):
     :param outf: output file stream passed to xml.saxutils.XMLGenerator()
     :param encoding: output encoding passed to xml.saxutils.XMLGenerator()
     :param quoting: a mapping str -> str for quoting output content or None,
-    the default is the map: {} (i.e. no quoting)
+      the default is the map: {} (i.e. no quoting)
 
     .. note: unknown events types are ignored
     .. seealso: xml_to_events(), xml.sax.saxutils.XMLGenerator()
