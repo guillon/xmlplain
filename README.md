@@ -1,5 +1,8 @@
 # xmlplain
+
 XML as plain object utility module
+
+[![Build Status](https://secure.travis-ci.org/guillon/xmlplain.svg)](http://travis-ci.org/guillon/xmlplain)
 
 ## Synopsys
 
