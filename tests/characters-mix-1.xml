@@ -1,0 +1,11 @@
+<mydocument>
+... <some>elements</some>
+... <inter>interleaved elements with <code>code</code> and <empty/> elts</inter> ...
+... <mix> <more/> </mix>
+... <mix> ... <more/> </mix>
+... <mix> <more/> ... </mix>
+<mix>
+<more/>
+</mix>
+
+</mydocument>

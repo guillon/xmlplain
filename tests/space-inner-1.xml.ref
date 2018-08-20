@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mydocument>
+  <dont-strip> hello </dont-strip>
+  <dont-strip> </dont-strip>
+  <strip> <empty></empty> </strip>
+  <strip> a <empty></empty> b </strip>
+</mydocument>

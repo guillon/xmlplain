@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mydocument>
+  ...
+  <some>elements</some>
+  ...
+  <inter>
+    interleaved elements with
+    <code>code</code>
+    and
+    <empty></empty>
+    elts
+  </inter>
+  ...
+...
+  <mix>
+    <more></more>
+  </mix>
+  ...
+  <mix>
+    ...
+    <more></more>
+  </mix>
+  ...
+  <mix>
+    <more></more>
+    ...
+  </mix>
+  <mix>
+    <more></more>
+  </mix>
+</mydocument>

@@ -1,0 +1,9 @@
+mydocument:
+- dont-strip: ' hello '
+- dont-strip: ' '
+- strip:
+    empty: ''
+- strip:
+  - a
+  - empty: ''
+  - b

@@ -1,0 +1,37 @@
+mydocument:
+- "\n... "
+- some: elements
+- "\n... "
+- inter:
+  - 'interleaved elements with '
+  - code: code
+  - ' and '
+  - empty: ''
+  - ' elts'
+- " ...\n... "
+- mix:
+  - ' '
+  - more: ''
+  - ' '
+- "\n... "
+- mix:
+  - ' ... '
+  - more: ''
+  - ' '
+- "\n... "
+- mix:
+  - ' '
+  - more: ''
+  - ' ... '
+- |2+
+
+- mix:
+  - |2+
+
+  - more: ''
+  - |2+
+
+- |2+
+
+
+...

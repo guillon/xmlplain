@@ -1,0 +1,18 @@
+mydocument:
+- "\n  "
+- dont-strip: ' hello '
+- "\n  "
+- dont-strip: ' '
+- "\n  "
+- strip:
+  - ' '
+  - empty: ''
+  - ' '
+- "\n  "
+- strip:
+  - ' a '
+  - empty: ''
+  - ' b '
+- |2+
+
+...

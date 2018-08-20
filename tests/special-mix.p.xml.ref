@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mydocument>
+  <special>&lt;&amp;&gt;"</special>
+  <not_so_special>&lt;&amp;&gt;"</not_so_special>
+</mydocument>

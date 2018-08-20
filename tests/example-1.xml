@@ -1,0 +1,14 @@
+<example>
+  <doc>This is an example for xmlobj documentation. </doc>
+  <content version="beta">
+    <kind>document</kind>
+    <class>example</class>
+    <structured/>
+    <elements>
+      <item>Elt 1</item>
+      <doc>Elt 2</doc>
+      <item>Elt 3</item>
+      <doc>Elt 4</doc>
+    </elements>
+  </content>
+</example>

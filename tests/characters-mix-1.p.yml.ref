@@ -1,0 +1,25 @@
+mydocument:
+- '...'
+- some: elements
+- '...'
+- inter:
+  - interleaved elements with
+  - code: code
+  - and
+  - empty: ''
+  - elts
+- |-
+  ...
+  ...
+- mix:
+    more: ''
+- '...'
+- mix:
+  - '...'
+  - more: ''
+- '...'
+- mix:
+  - more: ''
+  - '...'
+- mix:
+    more: ''

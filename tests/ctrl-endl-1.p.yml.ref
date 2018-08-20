@@ -1,0 +1,10 @@
+mydocument:
+- some: no endl
+- some: |
+    endl at end
+- some: |2-
+
+    endl at start
+- some: |2
+
+    endl at both

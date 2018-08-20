@@ -1,0 +1,5 @@
+mydocument:
+  multiple:
+  - kind1: one
+  - kind2: two
+  - kind1: three

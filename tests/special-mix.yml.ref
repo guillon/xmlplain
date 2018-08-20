@@ -1,0 +1,8 @@
+mydocument:
+- "\n  "
+- special: <&>"
+- "\n  "
+- not_so_special: <&>"
+- |2+
+
+...

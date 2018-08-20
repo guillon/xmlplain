@@ -1,0 +1,12 @@
+example:
+  doc: 'This is an example for xmlobj documentation. '
+  content:
+    '@version': beta
+    kind: document
+    class: example
+    structured: ''
+    elements:
+    - item: Elt 1
+    - doc: Elt 2
+    - item: Elt 3
+    - doc: Elt 4

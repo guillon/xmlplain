@@ -1,0 +1,17 @@
+mydocument:
+- "\n  "
+- some: no endl
+- "\n  "
+- some: |
+    endl at end
+- "\n  "
+- some: |2-
+
+    endl at start
+- "\n  "
+- some: |2
+
+    endl at both
+- |2+
+
+...

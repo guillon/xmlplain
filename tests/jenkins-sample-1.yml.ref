@@ -1,0 +1,151 @@
+project:
+- "\n  "
+- actions: ''
+- "\n  "
+- description: Exercice of verification dojo session 2
+- "\n  "
+- keepDependencies: 'false'
+- "\n  "
+- properties:
+  - "\n    "
+  - org.bstick12.jenkinsci.plugins.leastload.LeastLoadDisabledProperty:
+    - '@plugin': leastload@2.0.1
+    - "\n      "
+    - leastLoadDisabled: 'false'
+    - "\n    "
+  - "\n    "
+  - com.sonyericsson.rebuild.RebuildSettings:
+    - '@plugin': rebuild@1.27
+    - "\n      "
+    - autoRebuild: 'false'
+    - "\n      "
+    - rebuildDisabled: 'false'
+    - "\n    "
+  - "\n    "
+  - hudson.plugins.throttleconcurrents.ThrottleJobProperty:
+    - '@plugin': throttle-concurrents@2.0.1
+    - "\n      "
+    - maxConcurrentPerNode: '0'
+    - "\n      "
+    - maxConcurrentTotal: '0'
+    - "\n      "
+    - categories:
+        '@class': java.util.concurrent.CopyOnWriteArrayList
+    - "\n      "
+    - throttleEnabled: 'false'
+    - "\n      "
+    - throttleOption: project
+    - "\n      "
+    - limitOneJobWithMatchingParams: 'false'
+    - "\n      "
+    - paramsToUseForLimit: ''
+    - "\n    "
+  - "\n  "
+- "\n  "
+- scm:
+  - '@class': hudson.plugins.git.GitSCM
+  - '@plugin': git@3.8.0
+  - "\n    "
+  - configVersion: '2'
+  - "\n    "
+  - userRemoteConfigs:
+    - "\n      "
+    - hudson.plugins.git.UserRemoteConfig:
+      - "\n        "
+      - url: ssh://gitolite@codex.cro.st.com/verif-dojo/UVM_SV_IP.git
+      - "\n        "
+      - credentialsId: 12ace4fb-2e04-4f25-9410-364412b7efce
+      - "\n      "
+    - "\n    "
+  - "\n    "
+  - branches:
+    - "\n      "
+    - hudson.plugins.git.BranchSpec:
+      - "\n        "
+      - name: '*/master'
+      - "\n      "
+    - "\n    "
+  - "\n    "
+  - doGenerateSubmoduleConfigurations: 'false'
+  - "\n    "
+  - submoduleCfg:
+      '@class': list
+  - "\n    "
+  - extensions: ''
+  - "\n  "
+- "\n  "
+- assignedNode: centos-build-node-dmcverif
+- "\n  "
+- canRoam: 'false'
+- "\n  "
+- disabled: 'false'
+- "\n  "
+- blockBuildWhenDownstreamBuilding: 'false'
+- "\n  "
+- blockBuildWhenUpstreamBuilding: 'false'
+- "\n  "
+- triggers: ''
+- "\n  "
+- concurrentBuild: 'false'
+- "\n  "
+- builders:
+  - "\n    "
+  - hudson.tasks.Shell:
+    - "\n      "
+    - command: |+
+        #!/bin/tcsh
+        bsub -q reg -I -R "select[rh60]" -P VST_SHARED_VC $WORKSPACE/scripts/regression.csh
+
+
+    - "\n    "
+  - "\n  "
+- "\n  "
+- publishers:
+  - "\n    "
+  - hudson.tasks.ArtifactArchiver:
+    - "\n      "
+    - artifacts: work/jenkins/vc_logs/**/*.log, work/jenkins/test_results_report.xml
+    - "\n      "
+    - allowEmptyArchive: 'false'
+    - "\n      "
+    - onlyIfSuccessful: 'false'
+    - "\n      "
+    - fingerprint: 'false'
+    - "\n      "
+    - defaultExcludes: 'true'
+    - "\n      "
+    - caseSensitive: 'true'
+    - "\n    "
+  - "\n    "
+  - hudson.tasks.junit.JUnitResultArchiver:
+    - '@plugin': junit@1.24
+    - "\n      "
+    - testResults: vmanager/test_results.xml
+    - "\n      "
+    - keepLongStdio: 'false'
+    - "\n      "
+    - healthScaleFactor: '1.0'
+    - "\n      "
+    - allowEmptyResults: 'false'
+    - "\n    "
+  - "\n    "
+  - hudson.plugins.summary__report.ACIPluginPublisher:
+    - '@plugin': summary_report@1.15
+    - "\n      "
+    - name: work/jenkins/test_results_report.xml
+    - "\n      "
+    - shownOnProjectPage: 'false'
+    - "\n    "
+  - "\n  "
+- "\n  "
+- buildWrappers:
+  - "\n    "
+  - hudson.plugins.ansicolor.AnsiColorBuildWrapper:
+    - '@plugin': ansicolor@0.5.2
+    - "\n      "
+    - colorMapName: xterm
+    - "\n    "
+  - "\n  "
+- |2+
+
+...

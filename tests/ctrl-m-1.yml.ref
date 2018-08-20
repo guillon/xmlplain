@@ -1,0 +1,9 @@
+mydocument:
+- "\n  "
+- nest: |
+    one dos line
+    two dos line
+    three dos line
+- |2+
+
+...

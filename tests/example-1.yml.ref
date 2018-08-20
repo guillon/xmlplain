@@ -1,0 +1,27 @@
+example:
+- "\n  "
+- doc: 'This is an example for xmlobj documentation. '
+- "\n  "
+- content:
+  - '@version': beta
+  - "\n    "
+  - kind: document
+  - "\n    "
+  - class: example
+  - "\n    "
+  - structured: ''
+  - "\n    "
+  - elements:
+    - "\n      "
+    - item: Elt 1
+    - "\n      "
+    - doc: Elt 2
+    - "\n      "
+    - item: Elt 3
+    - "\n      "
+    - doc: Elt 4
+    - "\n    "
+  - "\n  "
+- |2+
+
+...

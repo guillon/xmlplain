@@ -1,0 +1,6 @@
+<mydocument>
+  <dont-strip> hello </dont-strip>
+  <dont-strip> </dont-strip>
+  <strip> <empty/> </strip>
+  <strip> a <empty/> b </strip>
+</mydocument>

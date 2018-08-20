@@ -1,0 +1,7 @@
+mydocument:
+- some: no tab
+- some: "some\ttab"
+- some: "\tsome tab at start"
+- some: "some tab at end\t"
+- some: "\tsome tab\teverywhere\t"
+- some: "\tsome tab at both ends\t"

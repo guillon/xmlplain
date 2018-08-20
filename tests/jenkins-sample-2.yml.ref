@@ -1,0 +1,407 @@
+project:
+- "\n  "
+- actions: ''
+- "\n  "
+- description: |-
+    <p> ST Accordo5-linux release build for all platforms. </p>
+    <p> Build all supported platforms for accordo5-linux </p>
+    <p> Triggered when a new tag is pushed on the accordo5-linux manifest</p>
+    <p> It will deploy resulting binaries to Artifactory</p>
+- "\n  "
+- keepDependencies: 'false'
+- "\n  "
+- properties:
+  - "\n    "
+  - jenkins.model.BuildDiscarderProperty:
+    - "\n      "
+    - strategy:
+      - '@class': hudson.tasks.LogRotator
+      - "\n        "
+      - daysToKeep: '-1'
+      - "\n        "
+      - numToKeep: '500'
+      - "\n        "
+      - artifactDaysToKeep: '-1'
+      - "\n        "
+      - artifactNumToKeep: '-1'
+      - "\n      "
+    - "\n    "
+  - "\n    "
+  - org.bstick12.jenkinsci.plugins.leastload.LeastLoadDisabledProperty:
+    - '@plugin': leastload@1.0.3
+    - "\n      "
+    - leastLoadDisabled: 'false'
+    - "\n    "
+  - "\n    "
+  - com.sonyericsson.rebuild.RebuildSettings:
+    - '@plugin': rebuild@1.25
+    - "\n      "
+    - autoRebuild: 'false'
+    - "\n      "
+    - rebuildDisabled: 'false'
+    - "\n    "
+  - "\n    "
+  - hudson.model.ParametersDefinitionProperty:
+    - "\n      "
+    - parameterDefinitions:
+      - "\n        "
+      - hudson.model.StringParameterDefinition:
+        - "\n          "
+        - name: ACI_SCRIPTS_URL
+        - "\n          "
+        - description: ''
+        - "\n          "
+        - defaultValue: ssh://gerrit.st.com:29418/smet/rdk/rdk-build-platform.git
+        - "\n        "
+      - "\n        "
+      - hudson.model.StringParameterDefinition:
+        - "\n          "
+        - name: ACI_SCRIPTS_REF
+        - "\n          "
+        - description: ''
+        - "\n          "
+        - defaultValue: master
+        - "\n        "
+      - "\n        "
+      - hudson.model.BooleanParameterDefinition:
+        - "\n          "
+        - name: RDK_UPDATE_SOURCE_MIRROR
+        - "\n          "
+        - description: Activate publication of downloads to shared mirror
+        - "\n          "
+        - defaultValue: 'false'
+        - "\n        "
+      - "\n        "
+      - hudson.model.BooleanParameterDefinition:
+        - "\n          "
+        - name: RDK_UPDATE_SSTATE_MIRROR
+        - "\n          "
+        - description: Activate publication of sstate cache to shared mirror
+        - "\n          "
+        - defaultValue: 'false'
+        - "\n        "
+      - "\n        "
+      - hudson.model.StringParameterDefinition:
+        - "\n          "
+        - name: RDK_MANIFESTS_URL
+        - "\n          "
+        - description: Manifest repository
+        - "\n          "
+        - defaultValue: ssh://gerrit.st.com:29418/accordo5-linux/yocto-bsp.git
+        - "\n        "
+      - "\n        "
+      - hudson.model.StringParameterDefinition:
+        - "\n          "
+        - name: RDK_MANIFESTS_REF
+        - "\n          "
+        - description: |
+            If set, force build for the given manifest reference. For instance: refs/heads/master or refs/tags/SDK2-ML158-YOCTO-1.0. Otherwise last refs/heads/yocto_master revision will be built.
+        - "\n          "
+        - defaultValue: $GERRIT_REFNAME
+        - "\n        "
+      - "\n        "
+      - hudson.model.StringParameterDefinition:
+        - "\n          "
+        - name: EMAIL_ADDRESS_LIST
+        - "\n          "
+        - description: Default email notifications (in addition possibly to notified
+            developers).
+        - "\n          "
+        - defaultValue: herve.knochel@st.com
+        - "\n        "
+      - "\n        "
+      - hudson.model.StringParameterDefinition:
+        - "\n          "
+        - name: PLATFORM_FILE
+        - "\n          "
+        - description: Supported configurations list file
+        - "\n          "
+        - defaultValue: configs-list-release.txt
+        - "\n        "
+      - "\n        "
+      - hudson.model.BooleanParameterDefinition:
+        - "\n          "
+        - name: RDK_TRACE_OE_EXEC
+        - "\n          "
+        - description: If set outputs configuration details in job console
+        - "\n          "
+        - defaultValue: 'true'
+        - "\n        "
+      - "\n      "
+    - "\n    "
+  - "\n    "
+  - hudson.plugins.throttleconcurrents.ThrottleJobProperty:
+    - '@plugin': throttle-concurrents@2.0.1
+    - "\n      "
+    - maxConcurrentPerNode: '0'
+    - "\n      "
+    - maxConcurrentTotal: '0'
+    - "\n      "
+    - categories:
+        '@class': java.util.concurrent.CopyOnWriteArrayList
+    - "\n      "
+    - throttleEnabled: 'false'
+    - "\n      "
+    - throttleOption: project
+    - "\n      "
+    - limitOneJobWithMatchingParams: 'false'
+    - "\n      "
+    - paramsToUseForLimit: ''
+    - "\n      "
+    - configVersion: '1'
+    - "\n    "
+  - "\n  "
+- "\n  "
+- scm:
+    '@class': hudson.scm.NullSCM
+- "\n  "
+- assignedNode: ubuntu-scheduler-node
+- "\n  "
+- canRoam: 'false'
+- "\n  "
+- disabled: 'false'
+- "\n  "
+- blockBuildWhenDownstreamBuilding: 'false'
+- "\n  "
+- blockBuildWhenUpstreamBuilding: 'false'
+- "\n  "
+- triggers:
+  - "\n    "
+  - com.sonyericsson.hudson.plugins.gerrit.trigger.hudsontrigger.GerritTrigger:
+    - '@plugin': gerrit-trigger@2.26.0
+    - "\n      "
+    - spec: ''
+    - "\n      "
+    - gerritProjects:
+      - "\n        "
+      - com.sonyericsson.hudson.plugins.gerrit.trigger.hudsontrigger.data.GerritProject:
+        - "\n          "
+        - compareType: PLAIN
+        - "\n          "
+        - pattern: accordo5-linux/yocto-bsp
+        - "\n          "
+        - branches:
+          - "\n            "
+          - com.sonyericsson.hudson.plugins.gerrit.trigger.hudsontrigger.data.Branch:
+            - "\n              "
+            - compareType: REG_EXP
+            - "\n              "
+            - pattern: refs/tags/CARPROC_.*
+            - "\n            "
+          - "\n            "
+          - com.sonyericsson.hudson.plugins.gerrit.trigger.hudsontrigger.data.Branch:
+            - "\n              "
+            - compareType: REG_EXP
+            - "\n              "
+            - pattern: refs/tags/GARMIN_.*
+            - "\n            "
+          - "\n          "
+        - "\n          "
+        - disableStrictForbiddenFileVerification: 'false'
+        - "\n        "
+      - "\n      "
+    - "\n      "
+    - skipVote:
+      - "\n        "
+      - onSuccessful: 'false'
+      - "\n        "
+      - onFailed: 'false'
+      - "\n        "
+      - onUnstable: 'false'
+      - "\n        "
+      - onNotBuilt: 'false'
+      - "\n      "
+    - "\n      "
+    - silentMode: 'true'
+    - "\n      "
+    - notificationLevel: ''
+    - "\n      "
+    - silentStartMode: 'false'
+    - "\n      "
+    - escapeQuotes: 'true'
+    - "\n      "
+    - nameAndEmailParameterMode: PLAIN
+    - "\n      "
+    - dependencyJobsNames: ''
+    - "\n      "
+    - commitMessageParameterMode: BASE64
+    - "\n      "
+    - changeSubjectParameterMode: PLAIN
+    - "\n      "
+    - commentTextParameterMode: BASE64
+    - "\n      "
+    - buildStartMessage: ''
+    - "\n      "
+    - buildFailureMessage: ''
+    - "\n      "
+    - buildSuccessfulMessage: ''
+    - "\n      "
+    - buildUnstableMessage: ''
+    - "\n      "
+    - buildNotBuiltMessage: ''
+    - "\n      "
+    - buildUnsuccessfulFilepath: ''
+    - "\n      "
+    - customUrl: ''
+    - "\n      "
+    - serverName: gerrit.st.com
+    - "\n      "
+    - triggerOnEvents:
+      - "\n        "
+      - com.sonyericsson.hudson.plugins.gerrit.trigger.hudsontrigger.events.PluginRefUpdatedEvent: ''
+      - "\n      "
+    - "\n      "
+    - dynamicTriggerConfiguration: 'false'
+    - "\n      "
+    - triggerConfigURL: ''
+    - "\n      "
+    - triggerInformationAction: ''
+    - "\n    "
+  - "\n  "
+- "\n  "
+- concurrentBuild: 'true'
+- "\n  "
+- builders:
+  - "\n    "
+  - hudson.tasks.Shell:
+    - "\n      "
+    - command: "#!/usr/bin/env bash\nset -xeuo pipefail\n\nenv\n\n# Cleaning\nchmod\
+        \ u+rwX -R .\nrm -rf * || true\n\ngit clone $ACI_SCRIPTS_URL rdk-build-platform\n\
+        (cd rdk-build-platform && git checkout -q ${ACI_SCRIPTS_REF})\nenv JOB_DEBUG=1\
+        \ rdk-build-platform/contrib/st-accordo5-linux/st-accordo5-linux-generate-configs.sh\n\
+        \nfor f in *.config;\ndo\n\tcat <$f >$f.enc\n\techo \"ENC_PARAMS=$(base64\
+        \ <$f| tr -d '\\n')\" >>$f.enc\ndone\t\n"
+    - "\n    "
+  - "\n    "
+  - hudson.plugins.parameterizedtrigger.TriggerBuilder:
+    - '@plugin': parameterized-trigger@2.35.2
+    - "\n      "
+    - configs:
+      - "\n        "
+      - hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig:
+        - "\n          "
+        - configs:
+            '@class': empty-list
+        - "\n          "
+        - configFactories:
+          - "\n            "
+          - hudson.plugins.parameterizedtrigger.FileBuildParameterFactory:
+            - "\n              "
+            - filePattern: '*.config.enc'
+            - "\n              "
+            - noFilesFoundAction: SKIP
+            - "\n            "
+          - "\n          "
+        - "\n          "
+        - projects: accordo5-linux-release-ref-build-platform
+        - "\n          "
+        - condition: ALWAYS
+        - "\n          "
+        - triggerWithNoParameters: 'false'
+        - "\n          "
+        - triggerFromChildProjects: 'false'
+        - "\n          "
+        - block: ''
+        - "\n          "
+        - buildAllNodesWithLabel: 'false'
+        - "\n        "
+      - "\n      "
+    - "\n    "
+  - "\n    "
+  - hudson.tasks.Shell:
+    - "\n      "
+    - command: |
+        env JOB_DEBUG=1 rdk-build-platform/contrib/st-accordo5-linux/st-accordo5-linux-generate-multibuild-report.sh accordo5-linux-release-ref-build-platform
+    - "\n    "
+  - "\n  "
+- "\n  "
+- publishers:
+  - "\n    "
+  - hudson.tasks.ArtifactArchiver:
+    - "\n      "
+    - artifacts: '*.xml,artifacts/*'
+    - "\n      "
+    - allowEmptyArchive: 'false'
+    - "\n      "
+    - onlyIfSuccessful: 'false'
+    - "\n      "
+    - fingerprint: 'false'
+    - "\n      "
+    - defaultExcludes: 'true'
+    - "\n      "
+    - caseSensitive: 'true'
+    - "\n    "
+  - "\n    "
+  - hudson.plugins.summary__report.ACIPluginPublisher:
+    - '@plugin': summary_report@1.15
+    - "\n      "
+    - name: '*.xml'
+    - "\n      "
+    - shownOnProjectPage: 'true'
+    - "\n    "
+  - "\n    "
+  - hudson.plugins.emailext.ExtendedEmailPublisher:
+    - '@plugin': email-ext@2.60
+    - "\n      "
+    - recipientList: $EMAIL_ADDRESS_LIST
+    - "\n      "
+    - configuredTriggers:
+      - "\n        "
+      - hudson.plugins.emailext.plugins.trigger.FailureTrigger:
+        - "\n          "
+        - email:
+          - "\n            "
+          - subject: $PROJECT_DEFAULT_SUBJECT
+          - "\n            "
+          - body: $PROJECT_DEFAULT_CONTENT
+          - "\n            "
+          - recipientProviders:
+            - "\n              "
+            - hudson.plugins.emailext.plugins.recipients.DevelopersRecipientProvider: ''
+            - "\n            "
+          - "\n            "
+          - attachmentsPattern: ''
+          - "\n            "
+          - attachBuildLog: 'false'
+          - "\n            "
+          - compressBuildLog: 'false'
+          - "\n            "
+          - replyTo: $PROJECT_DEFAULT_REPLYTO
+          - "\n            "
+          - contentType: project
+          - "\n          "
+        - "\n        "
+      - "\n      "
+    - "\n      "
+    - contentType: default
+    - "\n      "
+    - defaultSubject: $DEFAULT_SUBJECT
+    - "\n      "
+    - defaultContent: $DEFAULT_CONTENT
+    - "\n      "
+    - attachmentsPattern: ''
+    - "\n      "
+    - presendScript: $DEFAULT_PRESEND_SCRIPT
+    - "\n      "
+    - postsendScript: $DEFAULT_POSTSEND_SCRIPT
+    - "\n      "
+    - attachBuildLog: 'false'
+    - "\n      "
+    - compressBuildLog: 'false'
+    - "\n      "
+    - replyTo: $DEFAULT_REPLYTO
+    - "\n      "
+    - saveOutput: 'false'
+    - "\n      "
+    - disabled: 'false'
+    - "\n    "
+  - "\n  "
+- "\n  "
+- buildWrappers:
+  - "\n    "
+  - hudson.plugins.timestamper.TimestamperBuildWrapper:
+      '@plugin': timestamper@1.8.8
+  - "\n  "
+- |2+
+
+...

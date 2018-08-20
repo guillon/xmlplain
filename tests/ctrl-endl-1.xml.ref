@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mydocument>
+  <some>no endl</some>
+  <some>endl at end
+</some>
+  <some>
+endl at start</some>
+  <some>
+endl at both
+</some>
+</mydocument>

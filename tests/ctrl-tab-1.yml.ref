@@ -1,0 +1,16 @@
+mydocument:
+- "\n  "
+- some: no tab
+- "\n  "
+- some: "some\ttab"
+- "\n  "
+- some: "\tsome tab at start"
+- "\n  "
+- some: "some tab at end\t"
+- "\n  "
+- some: "\tsome tab\teverywhere\t"
+- "\n  "
+- some: "\tsome tab at both ends\t"
+- |2+
+
+...

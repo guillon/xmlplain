@@ -1,0 +1,4 @@
+<mydocument>
+  <special>&lt;&amp;>"</special>
+  <not_so_special>&lt;&amp;&gt;&quot;</not_so_special>
+</mydocument>

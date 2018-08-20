@@ -1,0 +1,13 @@
+mydocument:
+- "\n  "
+- multiple:
+  - "\n    "
+  - kind1: one
+  - "\n    "
+  - kind2: two
+  - "\n    "
+  - kind1: three
+  - "\n  "
+- |2+
+
+...

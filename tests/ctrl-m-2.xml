@@ -1,0 +1,5 @@
+<mydocument>
+  <nest>one dos line&#xd;
+two dos line&#xd;
+three dos line&#xd;</nest><!-- ctrl-m escapes should not diseapper -->
+</mydocument>

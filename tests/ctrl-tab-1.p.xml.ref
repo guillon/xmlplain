@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mydocument>
+  <some>no tab</some>
+  <some>some	tab</some>
+  <some>	some tab at start</some>
+  <some>some tab at end	</some>
+  <some>	some tab	everywhere	</some>
+  <some>	some tab at both ends	</some>
+</mydocument>

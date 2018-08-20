@@ -1,0 +1,6 @@
+mydocument:
+- "\n  "
+- empty: ''
+- "\n  "
+- empty-content: ''
+- " \n"

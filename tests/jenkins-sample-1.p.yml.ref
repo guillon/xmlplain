@@ -1,0 +1,73 @@
+project:
+  actions: ''
+  description: Exercice of verification dojo session 2
+  keepDependencies: 'false'
+  properties:
+    org.bstick12.jenkinsci.plugins.leastload.LeastLoadDisabledProperty:
+      '@plugin': leastload@2.0.1
+      leastLoadDisabled: 'false'
+    com.sonyericsson.rebuild.RebuildSettings:
+      '@plugin': rebuild@1.27
+      autoRebuild: 'false'
+      rebuildDisabled: 'false'
+    hudson.plugins.throttleconcurrents.ThrottleJobProperty:
+      '@plugin': throttle-concurrents@2.0.1
+      maxConcurrentPerNode: '0'
+      maxConcurrentTotal: '0'
+      categories:
+        '@class': java.util.concurrent.CopyOnWriteArrayList
+      throttleEnabled: 'false'
+      throttleOption: project
+      limitOneJobWithMatchingParams: 'false'
+      paramsToUseForLimit: ''
+  scm:
+    '@class': hudson.plugins.git.GitSCM
+    '@plugin': git@3.8.0
+    configVersion: '2'
+    userRemoteConfigs:
+      hudson.plugins.git.UserRemoteConfig:
+        url: ssh://gitolite@codex.cro.st.com/verif-dojo/UVM_SV_IP.git
+        credentialsId: 12ace4fb-2e04-4f25-9410-364412b7efce
+    branches:
+      hudson.plugins.git.BranchSpec:
+        name: '*/master'
+    doGenerateSubmoduleConfigurations: 'false'
+    submoduleCfg:
+      '@class': list
+    extensions: ''
+  assignedNode: centos-build-node-dmcverif
+  canRoam: 'false'
+  disabled: 'false'
+  blockBuildWhenDownstreamBuilding: 'false'
+  blockBuildWhenUpstreamBuilding: 'false'
+  triggers: ''
+  concurrentBuild: 'false'
+  builders:
+    hudson.tasks.Shell:
+      command: |+
+        #!/bin/tcsh
+        bsub -q reg -I -R "select[rh60]" -P VST_SHARED_VC $WORKSPACE/scripts/regression.csh
+
+
+  publishers:
+    hudson.tasks.ArtifactArchiver:
+      artifacts: work/jenkins/vc_logs/**/*.log, work/jenkins/test_results_report.xml
+      allowEmptyArchive: 'false'
+      onlyIfSuccessful: 'false'
+      fingerprint: 'false'
+      defaultExcludes: 'true'
+      caseSensitive: 'true'
+    hudson.tasks.junit.JUnitResultArchiver:
+      '@plugin': junit@1.24
+      testResults: vmanager/test_results.xml
+      keepLongStdio: 'false'
+      healthScaleFactor: '1.0'
+      allowEmptyResults: 'false'
+    hudson.plugins.summary__report.ACIPluginPublisher:
+      '@plugin': summary_report@1.15
+      name: work/jenkins/test_results_report.xml
+      shownOnProjectPage: 'false'
+  buildWrappers:
+    hudson.plugins.ansicolor.AnsiColorBuildWrapper:
+      '@plugin': ansicolor@0.5.2
+      colorMapName: xterm

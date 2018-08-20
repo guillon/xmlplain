@@ -1,0 +1,5 @@
+<mydocument>
+  <nest>one dos line
+two dos line
+three dos line</nest><!-- ctrl-m may diseapper -->
+</mydocument>
