@@ -101,7 +101,7 @@ and entity location. If this is found useful, please add an issue.
 
 """
 
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 
 import yaml, sys, xml, io
 from collections import OrderedDict
