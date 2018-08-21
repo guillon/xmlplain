@@ -25,14 +25,30 @@
 # For more information, please refer to <http://unlicense.org/>
 #
 
+PREFIX=/usr/local
+
 all:
+	./setup.py build
 	$(MAKE) -C tests all
 
 check:
 	$(MAKE) -C tests check
 
 clean:
+	rm -rf build xmlplain.pyc
 	$(MAKE) -C tests clean
 
 distclean:
+	rm -rf build xmlplain.pyc dist __pycache__ xmlplain.egg-info
 	$(MAKE) -C tests distclean
+
+install:
+	./setup.py install --prefix=$(PREFIX)
+
+dist:
+	./setup.py sdist
+
+doc:
+	sphinx-build doc gh-pages
+
+.PHONY: all check clean distclean install dist doc
