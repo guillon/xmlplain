@@ -62,7 +62,10 @@ install:
 	./setup.py install --prefix=$(PREFIX)
 
 dist:
-	./setup.py sdist
+	./setup.py sdist bdist_wheel
+
+upload:
+	twine upload dist/*
 
 doc:
 	sphinx-build doc gh-pages
@@ -72,4 +75,4 @@ clean-doc:
 
 distclean-doc: clean-doc
 
-.PHONY: all check clean distclean install dist doc all-local check-local clean-local distclean-local clean-doc distclean-doc all-tests check-tests clean-tests disclean-tests
+.PHONY: all check clean distclean install dist doc all-local check-local clean-local distclean-local clean-doc distclean-doc all-tests check-tests clean-tests disclean-tests upload
