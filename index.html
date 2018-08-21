@@ -1,0 +1,444 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Welcome to xmlplain’s documentation! &mdash; xmlplain 0.1.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="xmlplain 0.1.2 documentation" href="#" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="welcome-to-xmlplain-s-documentation">
+<h1>Welcome to xmlplain&#8217;s documentation!<a class="headerlink" href="#welcome-to-xmlplain-s-documentation" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-xmlplain">
+<span id="xmlplain-module"></span><h2>xmlplain module<a class="headerlink" href="#module-xmlplain" title="Permalink to this headline">¶</a></h2>
+<p>XML as plain object module.</p>
+<p>This module is a set of utility functions for parsing XML input
+into plain list/dict/string types.</p>
+<p>These plain XML objects in turn can be emitted through YAML
+for instance as bare YAML without python objects.</p>
+<p>The motivating usage is to dump XML to YAML, manually edit
+files as YAML, and emit XML output back.</p>
+<p>The original XML file is supposed to be preserved except
+for comments and if requested spaces between elements.</p>
+<p>Note that there are alternative modules with nearly the same
+functionality, but none of them both provide simple plain objects
+and preserve the initial XML content even for non structured XML.</p>
+<p>WARNING: the implementation does not support XML namespaces
+and entity location. If this is found useful, please add an issue.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Example:</th><td class="field-body"><div class="first highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="s2">&quot;tests/example-1.xml&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+<span class="go">&lt;example&gt;</span>
+<span class="go">  &lt;doc&gt;This is an example for xmlobj documentation. &lt;/doc&gt;</span>
+<span class="go">  &lt;content version=&quot;beta&quot;&gt;</span>
+<span class="go">    &lt;kind&gt;document&lt;/kind&gt;</span>
+<span class="go">    &lt;class&gt;example&lt;/class&gt;</span>
+<span class="go">    &lt;structured/&gt;</span>
+<span class="go">    &lt;elements&gt;</span>
+<span class="go">      &lt;item&gt;Elt 1&lt;/item&gt;</span>
+<span class="go">      &lt;doc&gt;Elt 2&lt;/doc&gt;</span>
+<span class="go">      &lt;item&gt;Elt 3&lt;/item&gt;</span>
+<span class="go">      &lt;doc&gt;Elt 4&lt;/doc&gt;</span>
+<span class="go">    &lt;/elements&gt;</span>
+<span class="go">  &lt;/content&gt;</span>
+<span class="go">&lt;/example&gt;</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">xmlplain</span><span class="o">,</span> <span class="nn">yaml</span><span class="o">,</span> <span class="nn">sys</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">root</span> <span class="o">=</span> <span class="n">xmlplain</span><span class="o">.</span><span class="n">xml_to_obj</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="s2">&quot;tests/example-1.xml&quot;</span><span class="p">),</span> <span class="n">strip_space</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">fold_dict</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">xmlplain</span><span class="o">.</span><span class="n">obj_to_yaml</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+<span class="go">example:</span>
+<span class="go">  doc: &#39;This is an example for xmlobj documentation. &#39;</span>
+<span class="go">  content:</span>
+<span class="go">    &#39;@version&#39;: beta</span>
+<span class="go">    kind: document</span>
+<span class="go">    class: example</span>
+<span class="go">    structured: &#39;&#39;</span>
+<span class="go">    elements:</span>
+<span class="go">    - item: Elt 1</span>
+<span class="go">    - doc: Elt 2</span>
+<span class="go">    - item: Elt 3</span>
+<span class="go">    - doc: Elt 4</span>
+</pre></div>
+</div>
+<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">xmlplain</span><span class="o">.</span><span class="n">xml_from_obj</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+<span class="go">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span>
+<span class="go">&lt;example&gt;</span>
+<span class="go">  &lt;doc&gt;This is an example for xmlobj documentation. &lt;/doc&gt;</span>
+<span class="go">  &lt;content version=&quot;beta&quot;&gt;</span>
+<span class="go">    &lt;kind&gt;document&lt;/kind&gt;</span>
+<span class="go">    &lt;class&gt;example&lt;/class&gt;</span>
+<span class="go">    &lt;structured&gt;&lt;/structured&gt;</span>
+<span class="go">    &lt;elements&gt;</span>
+<span class="go">      &lt;item&gt;Elt 1&lt;/item&gt;</span>
+<span class="go">      &lt;doc&gt;Elt 2&lt;/doc&gt;</span>
+<span class="go">      &lt;item&gt;Elt 3&lt;/item&gt;</span>
+<span class="go">      &lt;doc&gt;Elt 4&lt;/doc&gt;</span>
+<span class="go">    &lt;/elements&gt;</span>
+<span class="go">  &lt;/content&gt;</span>
+<span class="go">&lt;/example&gt;</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="function">
+<dt id="xmlplain.events_filter_pretty">
+<code class="descclassname">xmlplain.</code><code class="descname">events_filter_pretty</code><span class="sig-paren">(</span><em>events</em>, <em>evt_receiver=None</em>, <em>indent='  '</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/xmlplain.html#events_filter_pretty"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#xmlplain.events_filter_pretty" title="Permalink to this definition">¶</a></dt>
+<dd><p>Augment an XML event list for pretty printing.</p>
+<p>This is a filter function taking an event stream and returning the
+augmented event stream including ignorable whitespaces for an indented
+pretty print. the generated events stream is still a valid events stream
+suitable for xml_from_events().</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>events</strong> &#8211; the input XML events stream</li>
+<li><strong>evt_receiver</strong> &#8211; the new events receiver or None for newly generated list</li>
+<li><strong>indent</strong> &#8211; the base indent string, defaults to 2-space indent</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the evt_receiver if not None or the newly created events list</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="xmlplain.events_from_obj">
+<code class="descclassname">xmlplain.</code><code class="descname">events_from_obj</code><span class="sig-paren">(</span><em>root</em>, <em>evt_receiver=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/xmlplain.html#events_from_obj"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#xmlplain.events_from_obj" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an XML events stream from plain object.</p>
+<p>Generates an XML event stream suitable for xml_from_events() from
+a well formed XML plain object and pass it through the append()
+method to the receiver or to a newly created list.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>root</strong> &#8211; root of the XML plain object</li>
+<li><strong>evt_receiver</strong> &#8211; the receiver implementing the append method or None</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the receiver if not None or the created events list</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="xmlplain.obj_from_yaml">
+<code class="descclassname">xmlplain.</code><code class="descname">obj_from_yaml</code><span class="sig-paren">(</span><em>stream</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/xmlplain.html#obj_from_yaml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#xmlplain.obj_from_yaml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a YAML object, possibly holding a XML plain object.</p>
+<p>Returns the XML plain obj from the YAML stream or string.
+The dicts read from the YAML stream are stored as
+OrderedDict such that the XML plain object elements
+are kept in order.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>stream</strong> &#8211; input YMAL file stream or string</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">the constructed plain object</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="xmlplain.obj_to_yaml">
+<code class="descclassname">xmlplain.</code><code class="descname">obj_to_yaml</code><span class="sig-paren">(</span><em>root</em>, <em>stream=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/xmlplain.html#obj_to_yaml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#xmlplain.obj_to_yaml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Output an XML plain object to yaml.</p>
+<p>Output an object to yaml with some specific
+management for OrderedDict, Strings and Tuples.
+The specific treatment for these objects are
+there in order to preserve the XML ordered structure
+while generating a bare yaml file without any python object.</p>
+<p>Note that reading back the emitted YAML object should be done
+though obj_from_yaml() in order to preserve dict order.</p>
+<p>To be used as an alternative to a bare yaml.dump if one
+needs an editable YAML view of the XML plain object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>root</strong> &#8211; root of the plain object to dump</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Stream:</th><td class="field-body">optional stream or None for generating a string</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">None or the generated string if stream is None</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="xmlplain.xml_from_events">
+<code class="descclassname">xmlplain.</code><code class="descname">xml_from_events</code><span class="sig-paren">(</span><em>evts</em>, <em>outf=&lt;open file '&lt;stdout&gt;'</em>, <em>mode 'w'&gt;</em>, <em>encoding='UTF-8'</em>, <em>quoting=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/xmlplain.html#xml_from_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#xmlplain.xml_from_events" title="Permalink to this definition">¶</a></dt>
+<dd><p>Outputs the XML document from the events tuples.</p>
+<p>From the given events tuples lists as specified in xml_to_events(),
+generated a well formed XML document.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>evts</strong> &#8211; events tuples list or iterator</li>
+<li><strong>outf</strong> &#8211; output file stream passed to xml.saxutils.XMLGenerator()</li>
+<li><strong>encoding</strong> &#8211; output encoding passed to xml.saxutils.XMLGenerator()</li>
+<li><strong>quoting</strong> &#8211; a mapping str -&gt; str for quoting output content or None,
+the default is the map: {} (i.e. no quoting)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="xmlplain.xml_from_obj">
+<code class="descclassname">xmlplain.</code><code class="descname">xml_from_obj</code><span class="sig-paren">(</span><em>root</em>, <em>outf=&lt;open file '&lt;stdout&gt;'</em>, <em>mode 'w'&gt;</em>, <em>encoding='UTF-8'</em>, <em>pretty=True</em>, <em>indent='  '</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/xmlplain.html#xml_from_obj"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#xmlplain.xml_from_obj" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a XML file from an XML plain object</p>
+<p>Generates to the given stream the validated XML output for the
+plain object. This function does the opposite of xml_to_obj().</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>root</strong> &#8211; the root of the plain object</li>
+<li><strong>outf</strong> &#8211; the output file stream</li>
+<li><strong>encoding</strong> &#8211; the encoding to be used (default to &#8220;UTF-8&#8221;)</li>
+<li><strong>pretty</strong> &#8211; does indentation when True</li>
+<li><strong>indent</strong> &#8211; base indent string (default to 2-space)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="xmlplain.xml_to_events">
+<code class="descclassname">xmlplain.</code><code class="descname">xml_to_events</code><span class="sig-paren">(</span><em>inf</em>, <em>evt_receiver=None</em>, <em>quoting=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/xmlplain.html#xml_to_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#xmlplain.xml_to_events" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates XML events tuples from the input stream.</p>
+<p>The generated events consist of pairs: (type, value)
+where type is a single char identifier for the event and
+value is a variable length tuple.
+Events correspond to xml.sax events with the exception that
+attributes are generated as events instead of being part of
+the start element event.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>inf</strong> &#8211; the input stream (passed to xml.sax.parse())</li>
+<li><strong>evt_receiver</strong> &#8211; a receiver implementing the append() method or None,
+in which case a new list will be generated</li>
+<li><strong>quoting</strong> &#8211; a mapping str -&gt; str for quoting input content or None,
+the default is: {&#8220;r: &#8220;&#8221;} (i.e. remove all &#8220;r&#8221; from the input)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">returns the evt_receiver or the generated list</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Events are:
+- (&#8220;[&#8221;, (&#8220;&#8221;,)) for the document start
+- (&#8220;]&#8221;, (&#8220;&#8221;,)) for the document end
+- (&#8220;&lt;&#8221;, (elt_name,)) for an element start
+- (&#8220;&gt;&#8221;, (elt_name,)) for an element end
+- (&#8220;&#64;&#8221;, (attr_name, attr_value)) for an attribute associated to the
+last start element
+- (&#8220;|&#8221;, (content,)) for a CDATA string content
+- (&#8220;#&#8221;, (whitespace,)) for an ignorable whitespace string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="xmlplain.xml_to_obj">
+<code class="descclassname">xmlplain.</code><code class="descname">xml_to_obj</code><span class="sig-paren">(</span><em>inf</em>, <em>strip_space=False</em>, <em>fold_dict=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/xmlplain.html#xml_to_obj"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#xmlplain.xml_to_obj" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate an plain object representation from the XML input.</p>
+<p>The representation consists of lists of plain
+elements which are either XML elements as dict
+{ elt_name: children_list } or XML CDATA text contents as
+plain strings.
+This plain object for a XML document can be emitted to
+YAML for instance with no python dependency.</p>
+<p>When the &#8216;fold&#8217; option is given, an elements list may be
+simplified into a multiple key ordered dict or a single text content.
+Note that in this case, some Ordered dict python objects may be generated,
+one should then use the obj_to_yaml() method in order to get a bare
+YAML output.</p>
+<p>When the &#8216;strip_space&#8217; option is given, non-leaf text content
+are striped, this is in most case safe when managing structured
+XML, though, note that this change your XML document content.
+Generally one would use this in conjonction with pretty=true
+when emitting back the object to XML with xml_from_obj().</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>inf</strong> &#8211; the input XML file stream</li>
+<li><strong>strip_space</strong> &#8211; strip spaces from non-leaf text content</li>
+<li><strong>fold_dict</strong> &#8211; optimized unambiguous lists of dict into ordered dicts</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the root of the generated plain object, actually a single key dict</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Example:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">xmlplain</span><span class="o">,</span> <span class="nn">yaml</span><span class="o">,</span> <span class="nn">sys</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">root</span> <span class="o">=</span> <span class="n">xmlplain</span><span class="o">.</span><span class="n">xml_to_obj</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="s2">&quot;tests/example-1.xml&quot;</span><span class="p">),</span> <span class="n">strip_space</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">yaml</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="n">default_flow_style</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="go">example:</span>
+<span class="go">- doc: &#39;This is an example for xmlobj documentation. &#39;</span>
+<span class="go">- content:</span>
+<span class="go">  - &#39;@version&#39;: beta</span>
+<span class="go">  - kind: document</span>
+<span class="go">  - class: example</span>
+<span class="go">  - structured: &#39;&#39;</span>
+<span class="go">  - elements:</span>
+<span class="go">    - item: Elt 1</span>
+<span class="go">    - doc: Elt 2</span>
+<span class="go">    - item: Elt 3</span>
+<span class="go">    - doc: Elt 4</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">root</span> <span class="o">=</span> <span class="n">xmlplain</span><span class="o">.</span><span class="n">xml_to_obj</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="s2">&quot;tests/example-1.xml&quot;</span><span class="p">),</span> <span class="n">strip_space</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">fold_dict</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">xmlplain</span><span class="o">.</span><span class="n">obj_to_yaml</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+<span class="go">example:</span>
+<span class="go">  doc: &#39;This is an example for xmlobj documentation. &#39;</span>
+<span class="go">  content:</span>
+<span class="go">    &#39;@version&#39;: beta</span>
+<span class="go">    kind: document</span>
+<span class="go">    class: example</span>
+<span class="go">    structured: &#39;&#39;</span>
+<span class="go">    elements:</span>
+<span class="go">    - item: Elt 1</span>
+<span class="go">    - doc: Elt 2</span>
+<span class="go">    - item: Elt 3</span>
+<span class="go">    - doc: Elt 4</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><span>Index</span></a></li>
+<li><a class="reference internal" href="py-modindex.html"><span>Module Index</span></a></li>
+<li><a class="reference internal" href="search.html"><span>Search Page</span></a></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Welcome to xmlplain&#8217;s documentation!</a><ul>
+<li><a class="reference internal" href="#module-xmlplain">xmlplain module</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/index.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Christophe Guillon.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
+      
+      |
+      <a href="_sources/index.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

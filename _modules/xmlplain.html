@@ -1,0 +1,695 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>xmlplain &mdash; xmlplain 0.1.2 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="xmlplain 0.1.2 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for xmlplain</h1><div class="highlight"><pre>
+<span class="ch">#!/usr/bin/env python3</span>
+<span class="c1">#</span>
+<span class="c1"># This is free and unencumbered software released into the public domain.</span>
+<span class="c1">#</span>
+<span class="c1"># Anyone is free to copy, modify, publish, use, compile, sell, or</span>
+<span class="c1"># distribute this software, either in source code form or as a compiled</span>
+<span class="c1"># binary, for any purpose, commercial or non-commercial, and by any</span>
+<span class="c1"># means.</span>
+<span class="c1">#</span>
+<span class="c1"># In jurisdictions that recognize copyright laws, the author or authors</span>
+<span class="c1"># of this software dedicate any and all copyright interest in the</span>
+<span class="c1"># software to the public domain. We make this dedication for the benefit</span>
+<span class="c1"># of the public at large and to the detriment of our heirs and</span>
+<span class="c1"># successors. We intend this dedication to be an overt act of</span>
+<span class="c1"># relinquishment in perpetuity of all present and future rights to this</span>
+<span class="c1"># software under copyright law.</span>
+<span class="c1">#</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND,</span>
+<span class="c1"># EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF</span>
+<span class="c1"># MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.</span>
+<span class="c1"># IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR</span>
+<span class="c1"># OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,</span>
+<span class="c1"># ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR</span>
+<span class="c1"># OTHER DEALINGS IN THE SOFTWARE.</span>
+<span class="c1">#</span>
+<span class="c1"># For more information, please refer to &lt;http://unlicense.org/&gt;</span>
+<span class="c1">#</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">XML as plain object module.</span>
+
+<span class="sd">This module is a set of utility functions for parsing XML input</span>
+<span class="sd">into plain list/dict/string types.</span>
+
+<span class="sd">These plain XML objects in turn can be emitted through YAML</span>
+<span class="sd">for instance as bare YAML without python objects.</span>
+
+<span class="sd">The motivating usage is to dump XML to YAML, manually edit</span>
+<span class="sd">files as YAML, and emit XML output back.</span>
+
+<span class="sd">The original XML file is supposed to be preserved except</span>
+<span class="sd">for comments and if requested spaces between elements.</span>
+
+<span class="sd">Note that there are alternative modules with nearly the same</span>
+<span class="sd">functionality, but none of them both provide simple plain objects</span>
+<span class="sd">and preserve the initial XML content even for non structured XML.</span>
+
+<span class="sd">WARNING: the implementation does not support XML namespaces</span>
+<span class="sd">and entity location. If this is found useful, please add an issue.</span>
+
+<span class="sd">:Example:</span>
+<span class="sd">    &gt;&gt;&gt; print(open(&quot;tests/example-1.xml&quot;).read(), end=&#39;&#39;)</span>
+<span class="sd">    &lt;example&gt;</span>
+<span class="sd">      &lt;doc&gt;This is an example for xmlobj documentation. &lt;/doc&gt;</span>
+<span class="sd">      &lt;content version=&quot;beta&quot;&gt;</span>
+<span class="sd">        &lt;kind&gt;document&lt;/kind&gt;</span>
+<span class="sd">        &lt;class&gt;example&lt;/class&gt;</span>
+<span class="sd">        &lt;structured/&gt;</span>
+<span class="sd">        &lt;elements&gt;</span>
+<span class="sd">          &lt;item&gt;Elt 1&lt;/item&gt;</span>
+<span class="sd">          &lt;doc&gt;Elt 2&lt;/doc&gt;</span>
+<span class="sd">          &lt;item&gt;Elt 3&lt;/item&gt;</span>
+<span class="sd">          &lt;doc&gt;Elt 4&lt;/doc&gt;</span>
+<span class="sd">        &lt;/elements&gt;</span>
+<span class="sd">      &lt;/content&gt;</span>
+<span class="sd">    &lt;/example&gt;</span>
+
+<span class="sd">    &gt;&gt;&gt; import xmlplain, yaml, sys</span>
+<span class="sd">    &gt;&gt;&gt; root = xmlplain.xml_to_obj(open(&quot;tests/example-1.xml&quot;), strip_space=True, fold_dict=True)</span>
+<span class="sd">    &gt;&gt;&gt; xmlplain.obj_to_yaml(root, sys.stdout)</span>
+<span class="sd">    example:</span>
+<span class="sd">      doc: &#39;This is an example for xmlobj documentation. &#39;</span>
+<span class="sd">      content:</span>
+<span class="sd">        &#39;@version&#39;: beta</span>
+<span class="sd">        kind: document</span>
+<span class="sd">        class: example</span>
+<span class="sd">        structured: &#39;&#39;</span>
+<span class="sd">        elements:</span>
+<span class="sd">        - item: Elt 1</span>
+<span class="sd">        - doc: Elt 2</span>
+<span class="sd">        - item: Elt 3</span>
+<span class="sd">        - doc: Elt 4</span>
+
+<span class="sd">    &gt;&gt;&gt; xmlplain.xml_from_obj(root, sys.stdout)</span>
+<span class="sd">    &lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span>
+<span class="sd">    &lt;example&gt;</span>
+<span class="sd">      &lt;doc&gt;This is an example for xmlobj documentation. &lt;/doc&gt;</span>
+<span class="sd">      &lt;content version=&quot;beta&quot;&gt;</span>
+<span class="sd">        &lt;kind&gt;document&lt;/kind&gt;</span>
+<span class="sd">        &lt;class&gt;example&lt;/class&gt;</span>
+<span class="sd">        &lt;structured&gt;&lt;/structured&gt;</span>
+<span class="sd">        &lt;elements&gt;</span>
+<span class="sd">          &lt;item&gt;Elt 1&lt;/item&gt;</span>
+<span class="sd">          &lt;doc&gt;Elt 2&lt;/doc&gt;</span>
+<span class="sd">          &lt;item&gt;Elt 3&lt;/item&gt;</span>
+<span class="sd">          &lt;doc&gt;Elt 4&lt;/doc&gt;</span>
+<span class="sd">        &lt;/elements&gt;</span>
+<span class="sd">      &lt;/content&gt;</span>
+<span class="sd">    &lt;/example&gt;</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">__version__</span> <span class="o">=</span> <span class="s1">&#39;0.1.2&#39;</span>
+
+<span class="kn">import</span> <span class="nn">yaml</span><span class="o">,</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">xml</span><span class="o">,</span> <span class="nn">io</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">xml.sax.saxutils</span> <span class="kn">import</span> <span class="n">XMLGenerator</span>
+
+
+<div class="viewcode-block" id="xml_to_events"><a class="viewcode-back" href="../index.html#xmlplain.xml_to_events">[docs]</a><span class="k">def</span> <span class="nf">xml_to_events</span><span class="p">(</span><span class="n">inf</span><span class="p">,</span> <span class="n">evt_receiver</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">quoting</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates XML events tuples from the input stream.</span>
+
+<span class="sd">    The generated events consist of pairs: (type, value)</span>
+<span class="sd">    where type is a single char identifier for the event and</span>
+<span class="sd">    value is a variable length tuple.</span>
+<span class="sd">    Events correspond to xml.sax events with the exception that</span>
+<span class="sd">    attributes are generated as events instead of being part of</span>
+<span class="sd">    the start element event.</span>
+
+<span class="sd">    :param inf: the input stream (passed to xml.sax.parse())</span>
+<span class="sd">    :param evt_receiver: a receiver implementing the append() method or None,</span>
+<span class="sd">      in which case a new list will be generated</span>
+<span class="sd">    :param quoting: a mapping str -&gt; str for quoting input content or None,</span>
+<span class="sd">      the default is: {&quot;\\r: &quot;&quot;} (i.e. remove all &quot;\\r&quot; from the input)</span>
+
+<span class="sd">    :return: returns the evt_receiver or the generated list</span>
+
+<span class="sd">    Events are:</span>
+<span class="sd">    - (&quot;[&quot;, (&quot;&quot;,)) for the document start</span>
+<span class="sd">    - (&quot;]&quot;, (&quot;&quot;,)) for the document end</span>
+<span class="sd">    - (&quot;&lt;&quot;, (elt_name,)) for an element start</span>
+<span class="sd">    - (&quot;&gt;&quot;, (elt_name,)) for an element end</span>
+<span class="sd">    - (&quot;@&quot;, (attr_name, attr_value)) for an attribute associated to the</span>
+<span class="sd">    last start element</span>
+<span class="sd">    - (&quot;|&quot;, (content,)) for a CDATA string content</span>
+<span class="sd">    - (&quot;#&quot;, (whitespace,)) for an ignorable whitespace string</span>
+
+<span class="sd">    .. warning: namespace events and location events available in xml.sax are</span>
+<span class="sd">      ignored from the input stream</span>
+<span class="sd">    .. seealso: xml_from_events(), xml.sax.parse()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">class</span> <span class="nc">EventGenerator</span><span class="p">(</span><span class="n">xml</span><span class="o">.</span><span class="n">sax</span><span class="o">.</span><span class="n">ContentHandler</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evt_receiver</span><span class="p">,</span> <span class="n">quoting</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span> <span class="o">=</span> <span class="n">evt_receiver</span>
+            <span class="c1"># by default remove &#39;\r&#39; early as it is</span>
+            <span class="c1"># ends up being removed by editors anyway</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">quoting</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="p">}</span> <span class="k">if</span> <span class="n">quoting</span> <span class="o">==</span> <span class="bp">None</span> <span class="k">else</span> <span class="n">quoting</span>
+
+        <span class="k">def</span> <span class="nf">quote</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">quoting</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">quoting</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="n">content</span> <span class="o">=</span> <span class="n">content</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">content</span>
+        <span class="k">def</span> <span class="nf">startElement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s2">&quot;&lt;&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">name</span><span class="p">,)))</span>
+            <span class="c1"># Enforce a stable order as sax attributes are unordered</span>
+            <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+                <span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s2">&quot;@&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">attrs</span><span class="p">[</span><span class="n">attr</span><span class="p">])))</span>
+        <span class="k">def</span> <span class="nf">endElement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s2">&quot;&gt;&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">name</span><span class="p">,)))</span>
+        <span class="k">def</span> <span class="nf">startDocument</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s2">&quot;[&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,)))</span>
+        <span class="k">def</span> <span class="nf">endDocument</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s2">&quot;]&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,)))</span>
+        <span class="k">def</span> <span class="nf">characters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s2">&quot;|&quot;</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">quote</span><span class="p">(</span><span class="n">content</span><span class="p">),)))</span>
+        <span class="k">def</span> <span class="nf">ignorableWhiteSpace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">whitespace</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s2">&quot;#&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">whitespace</span><span class="p">,)))</span>
+    <span class="k">if</span> <span class="n">evt_receiver</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span> <span class="n">evt_receiver</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">xml</span><span class="o">.</span><span class="n">sax</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">inf</span><span class="p">,</span> <span class="n">EventGenerator</span><span class="p">(</span><span class="n">evt_receiver</span><span class="p">,</span> <span class="n">quoting</span><span class="o">=</span><span class="n">quoting</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">evt_receiver</span></div>
+
+
+<div class="viewcode-block" id="xml_from_events"><a class="viewcode-back" href="../index.html#xmlplain.xml_from_events">[docs]</a><span class="k">def</span> <span class="nf">xml_from_events</span><span class="p">(</span><span class="n">evts</span><span class="p">,</span> <span class="n">outf</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;UTF-8&#39;</span><span class="p">,</span> <span class="n">quoting</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Outputs the XML document from the events tuples.</span>
+
+<span class="sd">    From the given events tuples lists as specified in xml_to_events(),</span>
+<span class="sd">    generated a well formed XML document.</span>
+
+<span class="sd">    :param evts: events tuples list or iterator</span>
+<span class="sd">    :param outf: output file stream passed to xml.saxutils.XMLGenerator()</span>
+<span class="sd">    :param encoding: output encoding passed to xml.saxutils.XMLGenerator()</span>
+<span class="sd">    :param quoting: a mapping str -&gt; str for quoting output content or None,</span>
+<span class="sd">      the default is the map: {} (i.e. no quoting)</span>
+
+<span class="sd">    .. note: unknown events types are ignored</span>
+<span class="sd">    .. seealso: xml_to_events(), xml.sax.saxutils.XMLGenerator()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">class</span> <span class="nc">SaxGenerator</span><span class="p">():</span>
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sax_receiver</span><span class="p">,</span> <span class="n">quoting</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sax_receiver</span> <span class="o">=</span> <span class="n">sax_receiver</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">allowed</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;[&quot;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">quoting</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="n">quoting</span> <span class="o">==</span> <span class="bp">None</span> <span class="k">else</span> <span class="n">quoting</span>
+        <span class="k">def</span> <span class="nf">unquote</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">quoting</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">quoting</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="n">content</span> <span class="o">=</span> <span class="n">content</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">content</span>
+        <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evt</span><span class="p">):</span>
+            <span class="n">kind</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">evt</span>
+            <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;[&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sax_receiver</span><span class="o">.</span><span class="n">startDocument</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="bp">None</span>
+                <span class="k">return</span>
+            <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;@&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">return</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sax_receiver</span><span class="o">.</span><span class="n">startElement</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;]&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sax_receiver</span><span class="o">.</span><span class="n">endDocument</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;&lt;&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">OrderedDict</span><span class="p">())</span>
+            <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;&gt;&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sax_receiver</span><span class="o">.</span><span class="n">endElement</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;|&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sax_receiver</span><span class="o">.</span><span class="n">characters</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unquote</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+            <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;#&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sax_receiver</span><span class="o">.</span><span class="n">ignorableWhitespace</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">generator</span> <span class="o">=</span> <span class="n">XMLGenerator</span><span class="p">(</span><span class="n">outf</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">)</span>
+    <span class="n">generator</span> <span class="o">=</span> <span class="n">SaxGenerator</span><span class="p">(</span><span class="n">generator</span><span class="p">,</span> <span class="n">quoting</span><span class="o">=</span><span class="n">quoting</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">evt</span> <span class="ow">in</span> <span class="n">evts</span><span class="p">:</span> <span class="n">generator</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">evt</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="xml_to_obj"><a class="viewcode-back" href="../index.html#xmlplain.xml_to_obj">[docs]</a><span class="k">def</span> <span class="nf">xml_to_obj</span><span class="p">(</span><span class="n">inf</span><span class="p">,</span> <span class="n">strip_space</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">fold_dict</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate an plain object representation from the XML input.</span>
+
+<span class="sd">    The representation consists of lists of plain</span>
+<span class="sd">    elements which are either XML elements as dict</span>
+<span class="sd">    { elt_name: children_list } or XML CDATA text contents as</span>
+<span class="sd">    plain strings.</span>
+<span class="sd">    This plain object for a XML document can be emitted to</span>
+<span class="sd">    YAML for instance with no python dependency.</span>
+
+<span class="sd">    When the &#39;fold&#39; option is given, an elements list may be</span>
+<span class="sd">    simplified into a multiple key ordered dict or a single text content.</span>
+<span class="sd">    Note that in this case, some Ordered dict python objects may be generated,</span>
+<span class="sd">    one should then use the obj_to_yaml() method in order to get a bare</span>
+<span class="sd">    YAML output.</span>
+
+<span class="sd">    When the &#39;strip_space&#39; option is given, non-leaf text content</span>
+<span class="sd">    are striped, this is in most case safe when managing structured</span>
+<span class="sd">    XML, though, note that this change your XML document content.</span>
+<span class="sd">    Generally one would use this in conjonction with pretty=true</span>
+<span class="sd">    when emitting back the object to XML with xml_from_obj().</span>
+
+<span class="sd">    :param inf: the input XML file stream</span>
+<span class="sd">    :param strip_space: strip spaces from non-leaf text content</span>
+<span class="sd">    :param fold_dict: optimized unambiguous lists of dict into ordered dicts</span>
+
+<span class="sd">    :return: the root of the generated plain object, actually a single key dict</span>
+
+<span class="sd">    :Example:</span>
+
+<span class="sd">    &gt;&gt;&gt; import xmlplain, yaml, sys</span>
+<span class="sd">    &gt;&gt;&gt; root = xmlplain.xml_to_obj(open(&quot;tests/example-1.xml&quot;), strip_space=True)</span>
+<span class="sd">    &gt;&gt;&gt; yaml.dump(root, sys.stdout, default_flow_style=False)</span>
+<span class="sd">    example:</span>
+<span class="sd">    - doc: &#39;This is an example for xmlobj documentation. &#39;</span>
+<span class="sd">    - content:</span>
+<span class="sd">      - &#39;@version&#39;: beta</span>
+<span class="sd">      - kind: document</span>
+<span class="sd">      - class: example</span>
+<span class="sd">      - structured: &#39;&#39;</span>
+<span class="sd">      - elements:</span>
+<span class="sd">        - item: Elt 1</span>
+<span class="sd">        - doc: Elt 2</span>
+<span class="sd">        - item: Elt 3</span>
+<span class="sd">        - doc: Elt 4</span>
+
+<span class="sd">    &gt;&gt;&gt; root = xmlplain.xml_to_obj(open(&quot;tests/example-1.xml&quot;), strip_space=True, fold_dict=True)</span>
+<span class="sd">    &gt;&gt;&gt; xmlplain.obj_to_yaml(root, sys.stdout)</span>
+<span class="sd">    example:</span>
+<span class="sd">      doc: &#39;This is an example for xmlobj documentation. &#39;</span>
+<span class="sd">      content:</span>
+<span class="sd">        &#39;@version&#39;: beta</span>
+<span class="sd">        kind: document</span>
+<span class="sd">        class: example</span>
+<span class="sd">        structured: &#39;&#39;</span>
+<span class="sd">        elements:</span>
+<span class="sd">        - item: Elt 1</span>
+<span class="sd">        - doc: Elt 2</span>
+<span class="sd">        - item: Elt 3</span>
+<span class="sd">        - doc: Elt 4</span>
+
+<span class="sd">    .. seealso: xml_from_obj()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">class</span> <span class="nc">ObjGenerator</span><span class="p">():</span>
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strip_space</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">fold_dict</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">strip_space</span> <span class="o">=</span> <span class="n">strip_space</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fold_dict</span> <span class="o">=</span> <span class="n">fold_dict</span>
+        <span class="k">def</span> <span class="nf">get_value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">def</span> <span class="nf">strip_space_elts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elts</span><span class="p">):</span>
+            <span class="c1"># Only strip space when not a leaf</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">elts</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span> <span class="k">return</span> <span class="n">elts</span>
+            <span class="n">elts</span> <span class="o">=</span> <span class="p">[</span><span class="n">e</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span>
+                    <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">elts</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">e</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">elts</span>
+        <span class="k">def</span> <span class="nf">fold_dict_elts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elts</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">elts</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span> <span class="k">return</span> <span class="n">elts</span>
+            <span class="c1"># Simplify into an OrderedDict if there is no mixed text and no key duplicates</span>
+            <span class="n">keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;#&#39;</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">elts</span><span class="p">]</span>
+            <span class="n">unique_keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">keys</span><span class="p">))</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_keys</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span> <span class="ow">and</span> <span class="s1">&#39;#&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">unique_keys</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">OrderedDict</span><span class="p">([</span><span class="nb">list</span><span class="p">(</span><span class="n">elt</span><span class="o">.</span><span class="n">items</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">elt</span> <span class="ow">in</span> <span class="n">elts</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">elts</span>
+        <span class="k">def</span> <span class="nf">fold_trivial</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elts</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elts</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">elts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">elts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> <span class="k">return</span> <span class="n">elts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">elts</span>
+        <span class="k">def</span> <span class="nf">process_children</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="n">name</span><span class="p">,</span> <span class="n">children</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">children</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">strip_space</span><span class="p">:</span> <span class="n">children</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">strip_space_elts</span><span class="p">(</span><span class="n">children</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fold_dict</span><span class="p">:</span> <span class="n">children</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fold_dict_elts</span><span class="p">(</span><span class="n">children</span><span class="p">)</span>
+            <span class="n">children</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fold_trivial</span><span class="p">(</span><span class="n">children</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">children</span>
+        <span class="k">def</span> <span class="nf">children</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">def</span> <span class="nf">push_elt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+            <span class="n">elt</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="p">[]}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">()</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">elt</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">elt</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">pop_elt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="k">def</span> <span class="nf">append_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">()</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">&#39;@</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">:</span> <span class="n">value</span><span class="p">})</span>
+        <span class="k">def</span> <span class="nf">append_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="p">):</span>
+            <span class="n">children</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">children</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">children</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">children</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">content</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">children</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+            <span class="n">kind</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">event</span>
+            <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;[&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stack</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">&#39;_&#39;</span><span class="p">:</span> <span class="p">[]}]</span>
+                <span class="k">return</span>
+            <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;]&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">return</span>
+            <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;&lt;&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">push_elt</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">return</span>
+            <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;&gt;&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">process_children</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pop_elt</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">return</span>
+            <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;@&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">append_attr</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">return</span>
+            <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;|&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">append_content</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;#&#39;</span><span class="p">:</span>
+                <span class="k">pass</span>
+    <span class="k">return</span> <span class="n">xml_to_events</span><span class="p">(</span><span class="n">inf</span><span class="p">,</span> <span class="n">ObjGenerator</span><span class="p">(</span><span class="n">strip_space</span><span class="o">=</span><span class="n">strip_space</span><span class="p">,</span> <span class="n">fold_dict</span><span class="o">=</span><span class="n">fold_dict</span><span class="p">))</span><span class="o">.</span><span class="n">get_value</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="events_filter_pretty"><a class="viewcode-back" href="../index.html#xmlplain.events_filter_pretty">[docs]</a><span class="k">def</span> <span class="nf">events_filter_pretty</span><span class="p">(</span><span class="n">events</span><span class="p">,</span> <span class="n">evt_receiver</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="s2">&quot;  &quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Augment an XML event list for pretty printing.</span>
+
+<span class="sd">    This is a filter function taking an event stream and returning the</span>
+<span class="sd">    augmented event stream including ignorable whitespaces for an indented</span>
+<span class="sd">    pretty print. the generated events stream is still a valid events stream</span>
+<span class="sd">    suitable for xml_from_events().</span>
+
+<span class="sd">    :param events: the input XML events stream</span>
+<span class="sd">    :param evt_receiver: the new events receiver or None for newly generated list</span>
+<span class="sd">    :param indent: the base indent string, defaults to 2-space indent</span>
+
+<span class="sd">    :return: the evt_receiver if not None or the newly created events list</span>
+
+<span class="sd">    .. seealso: xml_from_event()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">class</span> <span class="nc">EventFilterPretty</span><span class="p">():</span>
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evt_receiver</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="s2">&quot;  &quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span> <span class="o">=</span> <span class="n">evt_receiver</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">indent</span> <span class="o">=</span> <span class="n">indent</span>
+        <span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evts</span><span class="p">):</span>
+            <span class="n">evts</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">evts</span><span class="p">)</span>
+            <span class="n">lookahead</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">depth</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lookahead</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+                        <span class="n">e</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">evts</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">e</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span> <span class="k">break</span>
+                        <span class="n">lookahead</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;&gt;&quot;</span><span class="p">,</span> <span class="s2">&quot;]&quot;</span><span class="p">]:</span> <span class="k">break</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lookahead</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">break</span>
+                <span class="n">kinds</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">lookahead</span><span class="p">)))</span>
+                <span class="k">if</span> <span class="n">kinds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;&lt;&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="s2">&quot;&lt;&quot;</span> <span class="ow">in</span> <span class="n">kinds</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+                    <span class="k">if</span> <span class="n">depth</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;#&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,)))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;#&#39;</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">indent</span> <span class="o">*</span> <span class="n">depth</span><span class="p">,)))</span>
+                    <span class="k">while</span> <span class="n">lookahead</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lookahead</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lookahead</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+                    <span class="k">if</span> <span class="n">depth</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;#&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,)))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">kinds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;&lt;&quot;</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">depth</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;#&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,)))</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;#&#39;</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">indent</span> <span class="o">*</span> <span class="n">depth</span><span class="p">,)))</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lookahead</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+                        <span class="n">depth</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">elif</span> <span class="n">kinds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">:</span>
+                        <span class="n">depth</span> <span class="o">-=</span> <span class="mi">1</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;#&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,)))</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;#&#39;</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">indent</span> <span class="o">*</span> <span class="n">depth</span><span class="p">,)))</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lookahead</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+                        <span class="k">if</span> <span class="n">depth</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;#&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,)))</span>
+                    <span class="k">elif</span> <span class="n">kinds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;|&quot;</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;#&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,)))</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;#&#39;</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">indent</span> <span class="o">*</span> <span class="n">depth</span><span class="p">,)))</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lookahead</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lookahead</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+            <span class="k">assert</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">evts</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span> <span class="o">==</span> <span class="bp">None</span><span class="p">)</span> <span class="c1"># assert all events are consummed</span>
+    <span class="k">if</span> <span class="n">evt_receiver</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span> <span class="n">evt_receiver</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">EventFilterPretty</span><span class="p">(</span><span class="n">evt_receiver</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">events</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">evt_receiver</span></div>
+
+
+<div class="viewcode-block" id="events_from_obj"><a class="viewcode-back" href="../index.html#xmlplain.events_from_obj">[docs]</a><span class="k">def</span> <span class="nf">events_from_obj</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">evt_receiver</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates an XML events stream from plain object.</span>
+
+<span class="sd">    Generates an XML event stream suitable for xml_from_events() from</span>
+<span class="sd">    a well formed XML plain object and pass it through the append()</span>
+<span class="sd">    method to the receiver or to a newly created list.</span>
+
+<span class="sd">    :param root: root of the XML plain object</span>
+<span class="sd">    :param evt_receiver: the receiver implementing the append method or None</span>
+
+<span class="sd">    :return: the receiver if not None or the created events list</span>
+
+<span class="sd">    .. seealso: xml_from_events()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">class</span> <span class="nc">EventGenerator</span><span class="p">():</span>
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evt_receiver</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span> <span class="o">=</span> <span class="n">evt_receiver</span>
+        <span class="k">def</span> <span class="nf">gen_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;|&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">token</span><span class="p">,)))</span>
+        <span class="k">def</span> <span class="nf">gen_elt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">children</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;&lt;&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">name</span><span class="p">,)))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gen_attrs_or_elts</span><span class="p">(</span><span class="n">children</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;&gt;&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">name</span><span class="p">,)))</span>
+        <span class="k">def</span> <span class="nf">gen_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;@&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)))</span>
+        <span class="k">def</span> <span class="nf">gen_attr_or_elt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">children</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;@&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">gen_attr</span><span class="p">(</span><span class="n">name</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">children</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">gen_elt</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">children</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">gen_attrs_or_elts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elts</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elts</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">elt</span> <span class="ow">in</span> <span class="n">elts</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">gen_attrs_or_elts</span><span class="p">(</span><span class="n">elt</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elts</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">children</span> <span class="ow">in</span> <span class="n">elts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span> <span class="bp">self</span><span class="o">.</span><span class="n">gen_attr_or_elt</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">children</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">gen_content</span><span class="p">(</span><span class="n">elts</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">generate_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">):</span>
+            <span class="k">assert</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="nb">dict</span><span class="p">))</span>
+            <span class="k">assert</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">items</span><span class="p">())</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">children</span><span class="p">)</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">items</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;[&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,)))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gen_elt</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">children</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">evt_receiver</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;]&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,)))</span>
+    <span class="k">if</span> <span class="n">evt_receiver</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span> <span class="n">evt_receiver</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">EventGenerator</span><span class="p">(</span><span class="n">evt_receiver</span><span class="p">)</span><span class="o">.</span><span class="n">generate_from</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">evt_receiver</span></div>
+
+
+<div class="viewcode-block" id="xml_from_obj"><a class="viewcode-back" href="../index.html#xmlplain.xml_from_obj">[docs]</a><span class="k">def</span> <span class="nf">xml_from_obj</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">outf</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;UTF-8&#39;</span><span class="p">,</span> <span class="n">pretty</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="s2">&quot;  &quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a XML file from an XML plain object</span>
+
+<span class="sd">    Generates to the given stream the validated XML output for the</span>
+<span class="sd">    plain object. This function does the opposite of xml_to_obj().</span>
+
+<span class="sd">    :param root: the root of the plain object</span>
+<span class="sd">    :param outf: the output file stream</span>
+<span class="sd">    :param encoding: the encoding to be used (default to &quot;UTF-8&quot;)</span>
+<span class="sd">    :param pretty: does indentation when True</span>
+<span class="sd">    :param indent: base indent string (default to 2-space)</span>
+
+<span class="sd">    .. seealso xml_to_obj()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">evts</span> <span class="o">=</span> <span class="n">events_from_obj</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">pretty</span><span class="p">:</span> <span class="n">evts</span> <span class="o">=</span> <span class="n">events_filter_pretty</span><span class="p">(</span><span class="n">evts</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="n">indent</span><span class="p">)</span>
+    <span class="n">xml_from_events</span><span class="p">(</span><span class="n">evts</span><span class="p">,</span> <span class="n">outf</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="obj_to_yaml"><a class="viewcode-back" href="../index.html#xmlplain.obj_to_yaml">[docs]</a><span class="k">def</span> <span class="nf">obj_to_yaml</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Output an XML plain object to yaml.</span>
+
+<span class="sd">    Output an object to yaml with some specific</span>
+<span class="sd">    management for OrderedDict, Strings and Tuples.</span>
+<span class="sd">    The specific treatment for these objects are</span>
+<span class="sd">    there in order to preserve the XML ordered structure</span>
+<span class="sd">    while generating a bare yaml file without any python object.</span>
+
+<span class="sd">    Note that reading back the emitted YAML object should be done</span>
+<span class="sd">    though obj_from_yaml() in order to preserve dict order.</span>
+
+<span class="sd">    To be used as an alternative to a bare yaml.dump if one</span>
+<span class="sd">    needs an editable YAML view of the XML plain object.</span>
+
+<span class="sd">    :param root: root of the plain object to dump</span>
+<span class="sd">    :stream: optional stream or None for generating a string</span>
+<span class="sd">    :return: None or the generated string if stream is None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">dict_representer</span><span class="p">(</span><span class="n">dumper</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">dumper</span><span class="o">.</span><span class="n">represent_dict</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+    <span class="k">def</span> <span class="nf">tuple_representer</span><span class="p">(</span><span class="n">dumper</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">dumper</span><span class="o">.</span><span class="n">represent_list</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+    <span class="k">def</span> <span class="nf">str_presenter</span><span class="p">(</span><span class="n">dumper</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># check for strings with newlines</span>
+            <span class="k">return</span> <span class="n">dumper</span><span class="o">.</span><span class="n">represent_scalar</span><span class="p">(</span>
+                <span class="s1">&#39;tag:yaml.org,2002:str&#39;</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dumper</span><span class="o">.</span><span class="n">represent_scalar</span><span class="p">(</span><span class="s1">&#39;tag:yaml.org,2002:str&#39;</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    <span class="n">yaml</span><span class="o">.</span><span class="n">add_representer</span><span class="p">(</span><span class="n">OrderedDict</span><span class="p">,</span> <span class="n">dict_representer</span><span class="p">)</span>
+    <span class="n">yaml</span><span class="o">.</span><span class="n">add_representer</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">str_presenter</span><span class="p">)</span>
+    <span class="n">yaml</span><span class="o">.</span><span class="n">add_representer</span><span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="n">tuple_representer</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">yaml</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">allow_unicode</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">default_flow_style</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="obj_from_yaml"><a class="viewcode-back" href="../index.html#xmlplain.obj_from_yaml">[docs]</a><span class="k">def</span> <span class="nf">obj_from_yaml</span><span class="p">(</span><span class="n">stream</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Read a YAML object, possibly holding a XML plain object.</span>
+
+<span class="sd">    Returns the XML plain obj from the YAML stream or string.</span>
+<span class="sd">    The dicts read from the YAML stream are stored as</span>
+<span class="sd">    OrderedDict such that the XML plain object elements</span>
+<span class="sd">    are kept in order.</span>
+
+<span class="sd">    :param stream: input YMAL file stream or string</span>
+<span class="sd">    :return: the constructed plain object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># load in ordered dict to keep fields ordered</span>
+    <span class="c1"># https://stackoverflow.com/a/21912744</span>
+    <span class="k">class</span> <span class="nc">OrderedLoader</span><span class="p">(</span><span class="n">yaml</span><span class="o">.</span><span class="n">Loader</span><span class="p">):</span> <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">construct_mapping</span><span class="p">(</span><span class="n">loader</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="n">loader</span><span class="o">.</span><span class="n">flatten_mapping</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="n">loader</span><span class="o">.</span><span class="n">construct_pairs</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
+
+    <span class="n">OrderedLoader</span><span class="o">.</span><span class="n">add_constructor</span><span class="p">(</span>
+        <span class="n">yaml</span><span class="o">.</span><span class="n">resolver</span><span class="o">.</span><span class="n">BaseResolver</span><span class="o">.</span><span class="n">DEFAULT_MAPPING_TAG</span><span class="p">,</span>
+        <span class="n">construct_mapping</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">yaml</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">OrderedLoader</span><span class="p">)</span></div>
+
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">argparse</span><span class="o">,</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">os</span>
+    <span class="k">if</span> <span class="s2">&quot;--doctest&quot;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">doctest</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__file__</span><span class="p">))</span>
+        <span class="n">test</span> <span class="o">=</span> <span class="n">doctest</span><span class="o">.</span><span class="n">testmod</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">failed</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s2">&quot;SUCCESS: test python documentation&quot;</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s2">&quot;FAILED: test python documentation&quot;</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--doctest&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;run documentation tests&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--inf&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;xml&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;input format, one of: xml, yml, evt (default: xml)&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--outf&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;xml&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;output format, one of: xml, yml, evt, py (default: xml)&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--pretty&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;pretty parse/unparse&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--filter&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;obj&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;intermefdiate filter, one of: obj, evt (default: obj)&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;input&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;input file or stdin&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;output&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;output file or stdout&quot;</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">inf</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;xml&quot;</span><span class="p">,</span> <span class="s2">&quot;yml&quot;</span><span class="p">]:</span> <span class="n">parser</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">: error: argument to --inf is invalid</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">parser</span><span class="o">.</span><span class="n">prog</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">outf</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;xml&quot;</span><span class="p">,</span> <span class="s2">&quot;yml&quot;</span><span class="p">,</span> <span class="s2">&quot;evt&quot;</span><span class="p">,</span> <span class="s2">&quot;py&quot;</span><span class="p">]:</span> <span class="n">parser</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">: error: argument to --outf is invalid</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">parser</span><span class="o">.</span><span class="n">prog</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">filter</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;obj&quot;</span><span class="p">,</span> <span class="s2">&quot;evt&quot;</span><span class="p">]:</span> <span class="n">parser</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">: error: argument to --filter is invalid</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">parser</span><span class="o">.</span><span class="n">prog</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">filter</span> <span class="o">==</span> <span class="s2">&quot;evt&quot;</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">inf</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;xml&quot;</span><span class="p">]:</span> <span class="n">parser</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">: error: input format incompatible withg filter</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">parser</span><span class="o">.</span><span class="n">prog</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">filter</span> <span class="o">==</span> <span class="s2">&quot;evt&quot;</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">outf</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;xml&quot;</span><span class="p">,</span> <span class="s2">&quot;evt&quot;</span><span class="p">]:</span> <span class="n">parser</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">: error: output format incompatible withg filter</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">parser</span><span class="o">.</span><span class="n">prog</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">input</span> <span class="o">==</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">args</span><span class="o">.</span><span class="n">input</span> <span class="o">==</span> <span class="s2">&quot;-&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">input</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span>
+    <span class="k">else</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">input</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">input</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">output</span> <span class="o">==</span> <span class="bp">None</span>  <span class="ow">or</span> <span class="n">args</span><span class="o">.</span><span class="n">output</span> <span class="o">==</span> <span class="s2">&quot;-&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">output</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span>
+    <span class="k">else</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">output</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">output</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">inf</span> <span class="o">==</span> <span class="s2">&quot;xml&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">filter</span> <span class="o">==</span> <span class="s2">&quot;evt&quot;</span><span class="p">:</span> <span class="n">evts</span> <span class="o">=</span> <span class="n">xml_to_events</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">input</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span> <span class="n">root</span> <span class="o">=</span> <span class="n">xml_to_obj</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">input</span><span class="p">,</span> <span class="n">strip_space</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">pretty</span><span class="p">,</span> <span class="n">fold_dict</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">pretty</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">inf</span> <span class="o">==</span> <span class="s2">&quot;yml&quot;</span><span class="p">:</span> <span class="n">root</span> <span class="o">=</span> <span class="n">obj_from_yaml</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">input</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">outf</span> <span class="o">==</span> <span class="s2">&quot;xml&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">filter</span> <span class="o">==</span> <span class="s2">&quot;evt&quot;</span><span class="p">:</span>
+            <span class="n">xml_from_events</span><span class="p">(</span><span class="n">evts</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">xml_from_obj</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">output</span><span class="p">,</span> <span class="n">pretty</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">pretty</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">outf</span> <span class="o">==</span> <span class="s2">&quot;yml&quot;</span><span class="p">:</span> <span class="n">obj_to_yaml</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">outf</span> <span class="o">==</span> <span class="s2">&quot;py&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">outf</span> <span class="o">==</span> <span class="s2">&quot;evt&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">filter</span> <span class="o">==</span> <span class="s2">&quot;obj&quot;</span><span class="p">:</span>
+            <span class="n">evts</span> <span class="o">=</span> <span class="n">events_from_obj</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">obj_to_yaml</span><span class="p">(</span><span class="n">evts</span><span class="p">))</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Christophe Guillon.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
