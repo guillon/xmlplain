@@ -107,8 +107,11 @@ from __future__ import print_function
 __version__ = '1.0.0'
 
 import yaml, sys, xml, io
-from collections import OrderedDict
 from xml.sax.saxutils import XMLGenerator
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
 
 
 def xml_to_events(inf, evt_receiver=None, quoting=None):
