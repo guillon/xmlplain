@@ -350,23 +350,18 @@ def xml_to_obj(inf, strip_space=False, fold_dict=False):
             kind, value = event
             if kind == '[':
                 self.stack = [{'_': []}]
-                return
-            if kind == ']':
+            elif kind == ']':
                 self.value = self.children()[0]
-                return
-            if kind == '<':
+            elif kind == '<':
                 self.push_elt(value[0])
-                return
-            if kind == '>':
+            elif kind == '>':
                 self.process_children()
                 self.pop_elt(value[0])
-                return
-            if kind == '@':
+            elif kind == '@':
                 self.append_attr(value[0], value[1])
-                return
-            if kind == '|':
+            elif kind == '|':
                 self.append_content(value[0])
-            if kind == '#':
+            elif kind == '#':
                 pass
     return xml_to_events(inf, ObjGenerator(strip_space=strip_space, fold_dict=fold_dict)).get_value()
 

@@ -29,27 +29,32 @@
 from setuptools import setup
 
 import xmlplain
+with open('README.md', 'r') as fh:
+    long_description = fh.read()
 
 # Setup the package
 setup(
     name='xmlplain',
     version=xmlplain.__version__,
-    description=xmlplain.__doc__,
+    description='XML as plain object module',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     author='Christophe Guillon',
     author_email='christophe.guillon.perso@gmail.com',
     license='unlicense',
     url='https://github.com/guillon/xmlplain',
     classifiers=[
-        "Development Status :: 5 - Production/Stable",
-        "Environment :: Console",
-        "Intended Audience :: Developers",
-        "License :: Public Domain",
-        "Operating System :: POSIX :: Linux",
-        "Programming Language :: Python :: 3.4",
-        "Programming Language :: Python :: 3.5",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3 :: Only",
-        "Topic :: Text Processing :: Markup :: XML",
+        'Development Status :: 5 - Production/Stable',
+        'Environment :: Console',
+        'Intended Audience :: Developers',
+        'License :: Public Domain',
+        'Operating System :: POSIX :: Linux',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Topic :: Text Processing :: Markup :: XML',
     ],
     py_modules=['xmlplain'],
     install_requires=[
