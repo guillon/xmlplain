@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 #
 # This is free and unencumbered software released into the public domain.
 #
@@ -39,7 +39,6 @@ setup(
     author_email='christophe.guillon.perso@gmail.com',
     license='unlicense',
     url='https://github.com/guillon/xmlplain',
-    python_requires=">=3.4",
     classifiers=[
         "Development Status :: 4 - Beta",
         "Environment :: Console",
@@ -54,10 +53,10 @@ setup(
     ],
     py_modules=['xmlplain'],
     install_requires=[
-        'PyYAML'
+        'ordereddict', 'PyYAML'
     ]
     ,tests_require=[
-        'PyYAML'
+        'ordereddict', 'PyYAML'
     ],
     zip_safe=True
 )

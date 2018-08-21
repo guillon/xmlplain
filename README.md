@@ -50,7 +50,7 @@ the `tests/example-1.xml` file:
 
 Execute the following python3 code:
 
-```python3
+```python
 import xmlplain
 
 # Read to plain object
@@ -82,7 +82,7 @@ example:
 One can then read the emitted YAML representation and generate
 again an XML output with:
 
-```python3
+```python
 import xmlplain
 
 # Read the YAML file
@@ -120,6 +120,28 @@ For a detailled usage, read the API documentation with:
 
     pydoc xmlplain
 
+Or get to the online documentation at: https://guillon.github.io/xmlplain
+
+
+## Download
+
+Download this module archives from the releases at: https://github.com/guillon/xmlplain/releases
+
+Or get the git repository at: https://github.com/guillon/xmlplain
+
+
+## Requirements
+
+The module is compatible with `python 2.6/2.7` and `python 3.x`.
+
+It depends upon the folowing modules:
+
+    sudo pip install --user setuptools PyYAML
+
+On deb systems one may install these modules with:
+
+    sudo apt-get install python-setuptools python-yaml
+
 
 ## Installation
 
@@ -130,7 +152,7 @@ For a user local installation (installs to `$HOME/.local`) do:
 
     ./setup.py install --user
 
-For a system level installtion do:
+For a system level installation do:
 
     ./setup.py build
     sudo ./setup.py install
@@ -142,6 +164,22 @@ This module is delivered as part of a source tree with tests, in order
 to run tests, do for instance:
 
     make -j16 check
+
+## Documentation
+
+The documentation is generated with `sphinx` as is:
+
+	make doc
+
+Install sphinx with:
+
+    pip install sphinx
+
+Or on deb systems:
+
+    sudo apt-get install python-sphinx
+
+The online documentation is hosted at: https://guillon.github.io/xmlplain
 
 
 ## License

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 #
 # This is free and unencumbered software released into the public domain.
 #
@@ -49,7 +49,9 @@ WARNING: the implementation does not support XML namespaces
 and entity location. If this is found useful, please add an issue.
 
 :Example:
-    >>> print(open("tests/example-1.xml").read(), end='')
+    >>> import xmlplain, sys
+
+    >>> _ = sys.stdout.write(open("tests/example-1.xml").read())
     <example>
       <doc>This is an example for xmlobj documentation. </doc>
       <content version="beta">
@@ -65,7 +67,6 @@ and entity location. If this is found useful, please add an issue.
       </content>
     </example>
 
-    >>> import xmlplain, yaml, sys
     >>> root = xmlplain.xml_to_obj(open("tests/example-1.xml"), strip_space=True, fold_dict=True)
     >>> xmlplain.obj_to_yaml(root, sys.stdout)
     example:
@@ -100,6 +101,8 @@ and entity location. If this is found useful, please add an issue.
 
 
 """
+
+from __future__ import print_function
 
 __version__ = '0.1.2'
 
@@ -398,7 +401,7 @@ def events_filter_pretty(events, evt_receiver=None, indent="  "):
                         lookahead.append(e)
                         if e[0] in [">", "]"]: break
                     if len(lookahead) == 0: break
-                kinds = list(next(zip(*lookahead)))
+                kinds = list(next(iter(zip(*lookahead))))
                 if kinds[0] == "<" and not "<" in kinds[1:]:
                     if depth > 0: self.evt_receiver.append(('#', ('\n',)))
                     self.evt_receiver.append(('#', (self.indent * depth,)))
@@ -529,6 +532,7 @@ def obj_to_yaml(root, stream=None):
         return dumper.represent_scalar('tag:yaml.org,2002:str', data)
     yaml.add_representer(OrderedDict, dict_representer)
     yaml.add_representer(str, str_presenter)
+    if sys.hexversion < 0x03000000: yaml.add_representer(unicode, str_presenter)
     yaml.add_representer(tuple, tuple_representer)
 
     return yaml.dump(root, stream, allow_unicode=True, default_flow_style=False)

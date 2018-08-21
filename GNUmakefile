@@ -27,19 +27,35 @@
 
 PREFIX=/usr/local
 
-all:
+all: all-local all-tests
+
+all-local:
 	./setup.py build
+
+all-tests:
 	$(MAKE) -C tests all
 
-check:
+check: check-local check-tests
+
+check-local:
+
+check-tests:
 	$(MAKE) -C tests check
 
-clean:
+clean: clean-local clean-doc clean-tests
+
+clean-local:
 	rm -rf build xmlplain.pyc
+
+clean-tests:
 	$(MAKE) -C tests clean
 
-distclean:
-	rm -rf build xmlplain.pyc dist __pycache__ xmlplain.egg-info
+distclean: distclean-local distclean-doc distclean-tests
+
+distclean-local: clean
+	rm -rf dist __pycache__ xmlplain.egg-info
+
+distclean-tests:
 	$(MAKE) -C tests distclean
 
 install:
@@ -51,4 +67,9 @@ dist:
 doc:
 	sphinx-build doc gh-pages
 
-.PHONY: all check clean distclean install dist doc
+clean-doc:
+	rm -rf gh-pages/.buildinfo gh-pages/.doctrees gh-pages/_modules gh-pages/_sources gh-pages/_static gh-pages/objects.inv gh-pages/*.html gh-pages/*.js
+
+distclean-doc: clean-doc
+
+.PHONY: all check clean distclean install dist doc all-local check-local clean-local distclean-local clean-doc distclean-doc all-tests check-tests clean-tests disclean-tests
