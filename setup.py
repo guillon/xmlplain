@@ -40,7 +40,7 @@ setup(
     license='unlicense',
     url='https://github.com/guillon/xmlplain',
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
         "Intended Audience :: Developers",
         "License :: Public Domain",

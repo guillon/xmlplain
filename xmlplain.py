@@ -104,7 +104,7 @@ and entity location. If this is found useful, please add an issue.
 
 from __future__ import print_function
 
-__version__ = '0.1.2'
+__version__ = '1.0.0'
 
 import yaml, sys, xml, io
 from collections import OrderedDict
