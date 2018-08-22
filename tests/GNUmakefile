@@ -33,6 +33,7 @@ ctrl-endl-2.xml \
 ctrl-m-1.xml \
 ctrl-m-2.xml \
 ctrl-tab-1.xml \
+ctrl-below-32.xml \
 dict-mix-1.xml \
 empty-1.xml \
 jenkins-sample-1.xml \

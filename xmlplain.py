@@ -128,8 +128,8 @@ def xml_to_events(inf, evt_receiver=None, quoting=None):
     :param inf: the input stream (passed to xml.sax.parse())
     :param evt_receiver: a receiver implementing the append() method or None,
       in which case a new list will be generated
-    :param quoting: a mapping str -> str for quoting input content or None,
-      the default is: {"\\r: ""} (i.e. remove all "\\r" from the input)
+    :param quoting: a list of (str_in, str_out) tuples for quoting
+      the resulting string contents (default: None)
 
     :return: returns the evt_receiver or the generated list
 
@@ -148,17 +148,8 @@ def xml_to_events(inf, evt_receiver=None, quoting=None):
     .. seealso: xml_from_events(), xml.sax.parse()
     """
     class EventGenerator(xml.sax.ContentHandler):
-        def __init__(self, evt_receiver, quoting=None):
+        def __init__(self, evt_receiver):
             self.evt_receiver = evt_receiver
-            # by default remove '\r' early as it is
-            # ends up being removed by editors anyway
-            self.quoting = {'\r': ''} if quoting == None else quoting
-
-        def quote(self, content):
-            if self.quoting:
-                for k, v in self.quoting.items():
-                    content = content.replace(k, v)
-            return content
         def startElement(self, name, attrs):
             self.evt_receiver.append(("<", (name,)))
             # Enforce a stable order as sax attributes are unordered
@@ -171,11 +162,22 @@ def xml_to_events(inf, evt_receiver=None, quoting=None):
         def endDocument(self):
             self.evt_receiver.append(("]", ("",)))
         def characters(self, content):
-            self.evt_receiver.append(("|", (self.quote(content),)))
+            self.evt_receiver.append(("|", (content,)))
         def ignorableWhiteSpace(self, whitespace):
             self.evt_receiver.append(("#", (whitespace,)))
+    class QuotingReader():
+        def __init__(self, child, quoting=None):
+            self.child = child
+            self.quoting = [] # no default quoting
+            if quoting != None: self.quoting.extend(quoting)
+        def read(self, n=None):
+            content = self.child.read(n)
+            for k, v in self.quoting:
+                content = content.replace(k, v)
+            return content
+    wrapper = QuotingReader(inf, quoting=quoting)
     if evt_receiver == None: evt_receiver = []
-    xml.sax.parse(inf, EventGenerator(evt_receiver, quoting=quoting))
+    xml.sax.parse(wrapper, EventGenerator(evt_receiver))
     return evt_receiver
 
 
@@ -189,22 +191,16 @@ def xml_from_events(evts, outf=sys.stdout, encoding='UTF-8', quoting=None):
     :param evts: events tuples list or iterator
     :param outf: output file stream passed to xml.saxutils.XMLGenerator()
     :param encoding: output encoding passed to xml.saxutils.XMLGenerator()
-    :param quoting: a mapping str -> str for quoting output content or None,
-      the default is the map: {} (i.e. no quoting)
+    :param quoting: a list of (str_in, str_out) tuples for quoting
+      the resulting XML stream in addition to the default quoted chars
+      (default: None)
 
     .. note: unknown events types are ignored
     .. seealso: xml_to_events(), xml.sax.saxutils.XMLGenerator()
     """
     class SaxGenerator():
-        def __init__(self, sax_receiver, quoting=None):
+        def __init__(self, sax_receiver):
             self.sax_receiver = sax_receiver
-            self.allowed = ["["]
-            self.quoting = {} if quoting == None else quoting
-        def unquote(self, content):
-            if self.quoting:
-                for k, v in self.quoting.items():
-                    content = content.replace(v, k)
-            return content
         def append(self, evt):
             kind, value = evt
             if kind == '[':
@@ -224,11 +220,23 @@ def xml_from_events(evts, outf=sys.stdout, encoding='UTF-8', quoting=None):
             elif kind == '>':
                 self.sax_receiver.endElement(value[0])
             elif kind == '|':
-                self.sax_receiver.characters(self.unquote(value[0]))
+                self.sax_receiver.characters(value[0])
             elif kind == '#':
                 self.sax_receiver.ignorableWhitespace(value[0])
-    generator = XMLGenerator(outf, encoding=encoding)
-    generator = SaxGenerator(generator, quoting=quoting)
+    class QuotingWriter():
+        def __init__(self, parent, quoting=None):
+            self.parent = parent
+            # at minimal '\r' must be quoted to &#xd; in the output
+            # XMLGenerator() does not, hence we do it there
+            self.quoting = [('\r', '&#xd;')]
+            if quoting != None: self.quoting.extend(quoting)
+        def write(self, content):
+            for k, v in self.quoting:
+                content = content.replace(k, v)
+            return self.parent.write(content)
+    wrapper = QuotingWriter(outf, quoting=quoting)
+    generator = XMLGenerator(wrapper, encoding=encoding)
+    generator = SaxGenerator(generator)
     for evt in evts: generator.append(evt)
 
 
@@ -588,7 +596,7 @@ if __name__ == "__main__":
     if args.outf not in ["xml", "yml", "evt", "py"]: parser.exit(2, "%s: error: argument to --outf is invalid\n" % parser.prog)
     if args.filter not in ["obj", "evt"]: parser.exit(2, "%s: error: argument to --filter is invalid\n" % parser.prog)
     if args.filter == "evt" and args.inf not in ["xml"]: parser.exit(2, "%s: error: input format incompatible withg filter\n" % parser.prog)
-    if args.filter == "evt" and args.outf not in ["xml", "evt"]: parser.exit(2, "%s: error: output format incompatible withg filter\n" % parser.prog)
+    if args.filter == "evt" and args.outf not in ["xml", "evt", "py"]: parser.exit(2, "%s: error: output format incompatible withg filter\n" % parser.prog)
     if args.input == None or args.input == "-": args.input = sys.stdin
     else: args.input = open(args.input)
     if args.output == None  or args.output == "-": args.output = sys.stdout
@@ -604,7 +612,11 @@ if __name__ == "__main__":
         else:
             xml_from_obj(root, args.output, pretty=args.pretty)
     elif args.outf == "yml": obj_to_yaml(root, args.output)
-    elif args.outf == "py": args.output.write(str(root))
+    elif args.outf == "py":
+        if args.filter == "obj":
+            args.output.write(str(root))
+        else:
+            args.output.write(str(evts))
     elif args.outf == "evt":
         if args.filter == "obj":
             evts = events_from_obj(root)

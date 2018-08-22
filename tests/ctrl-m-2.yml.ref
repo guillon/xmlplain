@@ -1,9 +1,6 @@
 mydocument:
 - "\n  "
-- nest: |-
-    one dos line
-    two dos line
-    three dos line
+- nest: "one dos line\r\ntwo dos line\r\nthree dos line\r"
 - |2+
 
 ...

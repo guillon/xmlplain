@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project>
   <actions></actions>
-  <description>&lt;p&gt; ST Accordo5-linux release build for all platforms. &lt;/p&gt;
-&lt;p&gt; Build all supported platforms for accordo5-linux &lt;/p&gt;
-&lt;p&gt; Triggered when a new tag is pushed on the accordo5-linux manifest&lt;/p&gt;
+  <description>&lt;p&gt; ST Accordo5-linux release build for all platforms. &lt;/p&gt;&#xd;
+&lt;p&gt; Build all supported platforms for accordo5-linux &lt;/p&gt;&#xd;
+&lt;p&gt; Triggered when a new tag is pushed on the accordo5-linux manifest&lt;/p&gt;&#xd;
 &lt;p&gt; It will deploy resulting binaries to Artifactory&lt;/p&gt;</description>
   <keepDependencies>false</keepDependencies>
   <properties>

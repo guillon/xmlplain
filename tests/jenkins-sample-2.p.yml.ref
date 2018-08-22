@@ -1,10 +1,9 @@
 project:
   actions: ''
-  description: |-
-    <p> ST Accordo5-linux release build for all platforms. </p>
-    <p> Build all supported platforms for accordo5-linux </p>
-    <p> Triggered when a new tag is pushed on the accordo5-linux manifest</p>
-    <p> It will deploy resulting binaries to Artifactory</p>
+  description: "<p> ST Accordo5-linux release build for all platforms. </p>\r\n<p>\
+    \ Build all supported platforms for accordo5-linux </p>\r\n<p> Triggered when\
+    \ a new tag is pushed on the accordo5-linux manifest</p>\r\n<p> It will deploy\
+    \ resulting binaries to Artifactory</p>"
   keepDependencies: 'false'
   properties:
     jenkins.model.BuildDiscarderProperty:
