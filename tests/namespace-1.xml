@@ -1,0 +1,3 @@
+<?xml version="1.0"?>
+<h:hello xmlns:h="http://www.greeting.com/ns/"
+	 id="a1" h:person="David"/>

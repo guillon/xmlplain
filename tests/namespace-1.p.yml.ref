@@ -1,0 +1,4 @@
+h:hello:
+  '@h:person': David
+  '@id': a1
+  '@xmlns:h': http://www.greeting.com/ns/

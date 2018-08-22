@@ -39,7 +39,11 @@ empty-1.xml \
 jenkins-sample-1.xml \
 jenkins-sample-2.xml \
 space-inner-1.xml \
-special-mix.xml
+special-mix.xml \
+namespace-1.xml \
+entity-1.xml \
+entity-2.xml \
+entity-3.xml \
 
 XMLPLAIN=../xmlplain.py
 

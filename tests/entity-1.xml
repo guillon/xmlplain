@@ -1,0 +1,7 @@
+<!DOCTYPE foo [
+<!ELEMENT foo ANY>
+<!ENTITY bar "foo">
+]>
+<foo>
+  Hello &bar;
+</foo>

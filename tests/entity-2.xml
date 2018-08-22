@@ -1,0 +1,7 @@
+<!DOCTYPE foo [
+<!ELEMENT foo ANY>
+<!ENTITY bar SYSTEM "file:///etc/hostname">
+]>
+<foo>
+  Hello &bar;
+</foo>

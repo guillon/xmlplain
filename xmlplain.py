@@ -43,10 +43,17 @@ for comments and if requested spaces between elements.
 
 Note that there are alternative modules with nearly the same
 functionality, but none of them both provide simple plain objects
-and preserve the initial XML content even for non structured XML.
+and preserve the initial XML content for non structured XML.
 
-WARNING: the implementation does not support XML namespaces
-and entity location. If this is found useful, please add an issue.
+XML namespaces are preserved for attributes/elements
+and re-emitted as is.
+
+WARNING: from the original XML documents, DTD specification,
+XML comments and processing entities will be discarded.
+Also system external entities are not allowed and will
+generate an exception.
+If one needs some of these features, it's probably
+not the right usage for this module. Fill an issue if unsure.
 
 :Example:
     >>> import xmlplain, sys
@@ -107,7 +114,8 @@ from __future__ import print_function
 __version__ = '1.0.2'
 
 import yaml, sys, xml, io
-from xml.sax.saxutils import XMLGenerator
+import contextlib
+import xml.sax.saxutils
 try:
     from collections import OrderedDict
 except ImportError:
@@ -165,7 +173,10 @@ def xml_to_events(inf, evt_receiver=None, quoting=None):
             self.evt_receiver.append(("|", (content,)))
         def ignorableWhiteSpace(self, whitespace):
             self.evt_receiver.append(("#", (whitespace,)))
-    class QuotingReader():
+    class EntityResolver(xml.sax.handler.EntityResolver):
+        def resolveEntity(self, publicId, systemId):
+            raise Exception("invalid system entity found: (%s, %s)" % (publicId, systemId))
+    class QuotingReader(io.TextIOBase):
         def __init__(self, child, quoting=None):
             self.child = child
             self.quoting = [] # no default quoting
@@ -177,7 +188,13 @@ def xml_to_events(inf, evt_receiver=None, quoting=None):
             return content
     wrapper = QuotingReader(inf, quoting=quoting)
     if evt_receiver == None: evt_receiver = []
-    xml.sax.parse(wrapper, EventGenerator(evt_receiver))
+    parser = xml.sax.make_parser()
+    parser.setFeature(xml.sax.handler.feature_namespaces, False)
+    parser.setFeature(xml.sax.handler.feature_namespace_prefixes, False)
+    parser.setFeature(xml.sax.handler.feature_external_ges, True)
+    parser.setEntityResolver(EntityResolver())
+    parser.setContentHandler(EventGenerator(evt_receiver))
+    parser.parse(wrapper)
     return evt_receiver
 
 
@@ -223,7 +240,7 @@ def xml_from_events(evts, outf=sys.stdout, encoding='UTF-8', quoting=None):
                 self.sax_receiver.characters(value[0])
             elif kind == '#':
                 self.sax_receiver.ignorableWhitespace(value[0])
-    class QuotingWriter():
+    class QuotingWriter(io.TextIOBase):
         def __init__(self, parent, quoting=None):
             self.parent = parent
             # at minimal '\r' must be quoted to &#xd; in the output
@@ -235,7 +252,7 @@ def xml_from_events(evts, outf=sys.stdout, encoding='UTF-8', quoting=None):
                 content = content.replace(k, v)
             return self.parent.write(content)
     wrapper = QuotingWriter(outf, quoting=quoting)
-    generator = XMLGenerator(wrapper, encoding=encoding)
+    generator = xml.sax.saxutils.XMLGenerator(wrapper, encoding=encoding)
     generator = SaxGenerator(generator)
     for evt in evts: generator.append(evt)
 
@@ -603,8 +620,16 @@ if __name__ == "__main__":
     else: args.output = open(args.output, "w")
 
     if args.inf == "xml":
-        if args.filter == "evt": evts = xml_to_events(args.input)
-        else: root = xml_to_obj(args.input, strip_space=args.pretty, fold_dict=args.pretty)
+        if args.filter == "evt":
+            try:
+                evts = xml_to_events(args.input)
+            except Exception as e:
+                evts = events_from_obj({ "exception": str(e).encode().decode()})
+        else:
+            try:
+                root = xml_to_obj(args.input, strip_space=args.pretty, fold_dict=args.pretty)
+            except Exception as e:
+                root = { "exception": str(e).encode().decode()}
     elif args.inf == "yml": root = obj_from_yaml(args.input)
     if args.outf == "xml":
         if args.filter == "evt":
