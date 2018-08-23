@@ -27,20 +27,24 @@
 
 PREFIX=/usr/local
 
+XMLPLAIN=$(abspath xmlplain.py)
+
+REPO=https://github.com/guillon/xmlplain
+
 all: all-local all-tests
 
 all-local:
 	./setup.py build
 
 all-tests:
-	$(MAKE) -C tests all
+	$(MAKE) -C tests XMLPLAIN="$(XMLPLAIN)" all
 
 check: check-local check-tests
 
-check-local:
+check-local: all-local
 
 check-tests:
-	$(MAKE) -C tests check
+	$(MAKE) -C tests XMLPLAIN="$(XMLPLAIN)" check
 
 clean: clean-local clean-doc clean-tests
 
@@ -53,7 +57,7 @@ clean-tests:
 distclean: distclean-local distclean-doc distclean-tests
 
 distclean-local: clean
-	rm -rf dist __pycache__ xmlplain.egg-info
+	rm -rf dist __pycache__ xmlplain.egg-info venv2 venv3
 
 distclean-tests:
 	$(MAKE) -C tests distclean
@@ -61,18 +65,95 @@ distclean-tests:
 install:
 	./setup.py install --prefix=$(PREFIX)
 
-dist:
-	./setup.py sdist bdist_wheel
+sdist:
+	./setup.py sdist
 
-upload:
-	twine upload dist/*
+bdist:
+	./setup.py bdist_wheel
 
 doc:
-	sphinx-build doc gh-pages
+	sphinx-build doc html
+
+upload:
+	twine upload dist/xmlplain-*.tar.gz dist/xmlplain-*.whl
+
+upload-doc:
+	rm -rf gh-pages
+	(mkdir gh-pages && cd gh-pages && git init && \
+	git fetch "$(REPO)" refs/heads/gh-pages && git checkout FETCH_HEAD)
+	rm -rf gh-pages/* && cp -a html/* gh-pages/
+	(cd gh-pages && git add -A)
+	(cd gh-pages && git commit -m 'Update doc' || true)
+	(cd gh-pages &&	git push "$(REPO)" HEAD:refs/heads/gh-pages)
+
+requirements:
+	pip install -r requirements.txt
+
+upload-requirements:
+	pip install twine
+
+doc-requirements:
+	pip install sphinx
+
+self-requirements:
+	pip install xmlplain
+
+release:
+	$(MAKE) distclean
+	$(MAKE) venv2 venv3
+	$(MAKE) release-venv2 release-venv3
+
+release-venv2 release-venv3: release-%:
+	$(MAKE) $*-requirements
+	$(MAKE) $*-check
+	$(MAKE) $*-bdist
+	[ "$*" != "venv3" ] || $(MAKE) venv3-sdist
+	[ "$*" != "venv3" ] || $(MAKE) venv3-doc-requirements
+	[ "$*" != "venv3" ] || $(MAKE) venv3-doc
+
+release-upload:
+	$(MAKE) venv3-upload-requirements
+	$(MAKE) venv3-upload
+
+release-check:
+	$(MAKE) distclean
+	$(MAKE) venv2 venv3
+	$(MAKE) release-check-venv2 release-check-venv3
+
+release-check-venv2 release-check-venv3: release-check-%:
+	$(MAKE) $*-self-requirements
+	$(MAKE) XMLPLAIN="python -m xmlplain" $*-check
+	$(MAKE) $*
+	$(MAKE) $*-self-requirements
+	$(MAKE) XMLPLAIN="python -m xmlplain" $*-check
+
+venv2-%:
+	env VIRTUAL_ENV="$$PWD/venv2/bin" \
+	PATH="$$PWD/venv2/bin:$$PATH" \
+	$(MAKE) $*
+
+venv3-%:
+	env VIRTUAL_ENV="$$PWD/venv3/bin" \
+	PATH="$$PWD/venv3/bin:$$PATH" \
+	$(MAKE) $*
+
+venv2:
+	virtualenv -p python2 venv2
+	venv2/bin/pip install --upgrade pip setuptools wheel
+
+venv3:
+	virtualenv -p python3 venv3
+	venv3/bin/pip install --upgrade pip setuptools wheel certifi
+	[ ! -f /etc/ssl/certs/ca-certificates.crt ] || cp /etc/ssl/certs/ca-certificates.crt venv3/lib/python3*/site-packages/certifi/cacert.pem
 
 clean-doc:
-	rm -rf gh-pages/.buildinfo gh-pages/.doctrees gh-pages/_modules gh-pages/_sources gh-pages/_static gh-pages/objects.inv gh-pages/*.html gh-pages/*.js
+	rm -rf html gh-pages
 
 distclean-doc: clean-doc
 
-.PHONY: all check clean distclean install dist doc all-local check-local clean-local distclean-local clean-doc distclean-doc all-tests check-tests clean-tests disclean-tests upload
+.PHONY: all check clean distclean install sdist bdist doc upload
+.PHONY: all-local check-local clean-local distclean-local
+.PHONY: doc clean-doc distclean-doc
+.PHONY: all-tests check-tests clean-tests disclean-tests
+.PHONY: release release-venv2 release-venv3 release-upload release-check release-check-venv2 release-check-venv3 requirements upload-requirements doc-requirements self-requirements
+.PHONY: venv2-% venv3-%

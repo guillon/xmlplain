@@ -46,7 +46,8 @@ entity-2.xml \
 entity-3.xml \
 unicode-1.xml
 
-XMLPLAIN=../xmlplain.py
+TOP=$(abspath ..)
+XMLPLAIN=$(TOP)/xmlplain.py)
 
 REF_XMLS=$(TESTS:%.xml=%.xml.ref)
 REF_YMLS=$(TESTS:%.xml=%.yml.ref)
@@ -68,7 +69,7 @@ clean:
 distclean: clean
 
 check-doc:
-	$(XMLPLAIN) --doctest
+	cd $(TOP) && $(XMLPLAIN) --doctest
 
 check-evts: $(CHECK_EVTS)
 
