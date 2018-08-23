@@ -122,7 +122,7 @@ except ImportError:
     from ordereddict import OrderedDict
 
 
-def xml_to_events(inf, evt_receiver=None, quoting=None):
+def xml_to_events(stream, evt_receiver=None, encoding="UTF-8"):
     """
     Generates XML events tuples from the input stream.
 
@@ -132,12 +132,12 @@ def xml_to_events(inf, evt_receiver=None, quoting=None):
     Events correspond to xml.sax events with the exception that
     attributes are generated as events instead of being part of
     the start element event.
+    The XML stresm is parsed with xml.sax.make_parser().
 
-    :param inf: the input stream (passed to xml.sax.parse())
+    :param stream: the input stream
     :param evt_receiver: a receiver implementing the append() method or None,
       in which case a new list will be generated
-    :param quoting: a list of (str_in, str_out) tuples for quoting
-      the resulting string contents (default: None)
+    :param encoding: encoding used whebn the input is a bytes string
 
     :return: returns the evt_receiver or the generated list
 
@@ -151,8 +151,6 @@ def xml_to_events(inf, evt_receiver=None, quoting=None):
     - ("|", (content,)) for a CDATA string content
     - ("#", (whitespace,)) for an ignorable whitespace string
 
-    .. warning: namespace events and location events available in xml.sax are
-      ignored from the input stream
     .. seealso: xml_from_events(), xml.sax.parse()
     """
     class EventGenerator(xml.sax.ContentHandler):
@@ -176,17 +174,6 @@ def xml_to_events(inf, evt_receiver=None, quoting=None):
     class EntityResolver(xml.sax.handler.EntityResolver):
         def resolveEntity(self, publicId, systemId):
             raise Exception("invalid system entity found: (%s, %s)" % (publicId, systemId))
-    class QuotingReader(io.TextIOBase):
-        def __init__(self, child, quoting=None):
-            self.child = child
-            self.quoting = [] # no default quoting
-            if quoting != None: self.quoting.extend(quoting)
-        def read(self, n=None):
-            content = self.child.read(n)
-            for k, v in self.quoting:
-                content = content.replace(k, v)
-            return content
-    wrapper = QuotingReader(inf, quoting=quoting)
     if evt_receiver == None: evt_receiver = []
     parser = xml.sax.make_parser()
     parser.setFeature(xml.sax.handler.feature_namespaces, False)
@@ -194,23 +181,21 @@ def xml_to_events(inf, evt_receiver=None, quoting=None):
     parser.setFeature(xml.sax.handler.feature_external_ges, True)
     parser.setEntityResolver(EntityResolver())
     parser.setContentHandler(EventGenerator(evt_receiver))
-    parser.parse(wrapper)
+    parser.parse(stream)
     return evt_receiver
 
 
-def xml_from_events(evts, outf=sys.stdout, encoding='UTF-8', quoting=None):
+def xml_from_events(evts, stream, encoding='UTF-8'):
     """
     Outputs the XML document from the events tuples.
 
     From the given events tuples lists as specified in xml_to_events(),
     generated a well formed XML document.
+    The XML output is generated through xml.saxutils.XMLGenerator().
 
     :param evts: events tuples list or iterator
-    :param outf: output file stream passed to xml.saxutils.XMLGenerator()
-    :param encoding: output encoding passed to xml.saxutils.XMLGenerator()
-    :param quoting: a list of (str_in, str_out) tuples for quoting
-      the resulting XML stream in addition to the default quoted chars
-      (default: None)
+    :param stream: output file stream
+    :param encoding: output encoding
 
     .. note: unknown events types are ignored
     .. seealso: xml_to_events(), xml.sax.saxutils.XMLGenerator()
@@ -240,24 +225,31 @@ def xml_from_events(evts, outf=sys.stdout, encoding='UTF-8', quoting=None):
                 self.sax_receiver.characters(value[0])
             elif kind == '#':
                 self.sax_receiver.ignorableWhitespace(value[0])
-    class QuotingWriter(io.TextIOBase):
-        def __init__(self, parent, quoting=None):
+    class QuotingWriter():
+        def __init__(self, parent, encoding):
             self.parent = parent
-            # at minimal '\r' must be quoted to &#xd; in the output
+            self.input_encoding = encoding
+            # '\r' must be quoted to &#xd; in the output
             # XMLGenerator() does not, hence we do it there
-            self.quoting = [('\r', '&#xd;')]
-            if quoting != None: self.quoting.extend(quoting)
+            self.quoting = [(b'\r', b'&#xd;')]
+            self.binary = True
+            try:
+                self.parent.write(b'')
+            except TypeError as e:
+                self.binary = False
         def write(self, content):
+            assert(isinstance(content, bytes))
             for k, v in self.quoting:
                 content = content.replace(k, v)
+            if not self.binary: content = content.decode(self.input_encoding)
             return self.parent.write(content)
-    wrapper = QuotingWriter(outf, quoting=quoting)
-    generator = xml.sax.saxutils.XMLGenerator(wrapper, encoding=encoding)
+    writer = QuotingWriter(stream, encoding=encoding)
+    generator = xml.sax.saxutils.XMLGenerator(writer, encoding=encoding)
     generator = SaxGenerator(generator)
     for evt in evts: generator.append(evt)
 
 
-def xml_to_obj(inf, strip_space=False, fold_dict=False):
+def xml_to_obj(stream, encoding="UTF-8", strip_space=False, fold_dict=False):
     """
     Generate an plain object representation from the XML input.
 
@@ -280,7 +272,8 @@ def xml_to_obj(inf, strip_space=False, fold_dict=False):
     Generally one would use this in conjonction with pretty=true
     when emitting back the object to XML with xml_from_obj().
 
-    :param inf: the input XML file stream
+    :param stream: the input XML file stream
+    :param encoding: encoding used when the input is bytes string
     :param strip_space: strip spaces from non-leaf text content
     :param fold_dict: optimized unambiguous lists of dict into ordered dicts
 
@@ -388,7 +381,7 @@ def xml_to_obj(inf, strip_space=False, fold_dict=False):
                 self.append_content(value[0])
             elif kind == '#':
                 pass
-    return xml_to_events(inf, ObjGenerator(strip_space=strip_space, fold_dict=fold_dict)).get_value()
+    return xml_to_events(stream, ObjGenerator(strip_space=strip_space, fold_dict=fold_dict), encoding=encoding).get_value()
 
 
 def events_filter_pretty(events, evt_receiver=None, indent="  "):
@@ -504,15 +497,16 @@ def events_from_obj(root, evt_receiver=None):
     return evt_receiver
 
 
-def xml_from_obj(root, outf=sys.stdout, encoding='UTF-8', pretty=True, indent="  "):
+def xml_from_obj(root, stream, encoding='UTF-8', pretty=True, indent="  "):
     """
-    Generate a XML file from an XML plain object
+    Generate a XML output from a plain object
 
-    Generates to the given stream the validated XML output for the
-    plain object. This function does the opposite of xml_to_obj().
+    Generates to the XML representation for the plain object as
+    generated by this module..
+    This function does the opposite of xml_to_obj().
 
     :param root: the root of the plain object
-    :param outf: the output file stream
+    :param stream: the output file stream
     :param encoding: the encoding to be used (default to "UTF-8")
     :param pretty: does indentation when True
     :param indent: base indent string (default to 2-space)
@@ -521,8 +515,7 @@ def xml_from_obj(root, outf=sys.stdout, encoding='UTF-8', pretty=True, indent=" 
     """
     evts = events_from_obj(root)
     if pretty: evts = events_filter_pretty(evts, indent=indent)
-    xml_from_events(evts, outf, encoding=encoding)
-
+    xml_from_events(evts, stream, encoding=encoding)
 
 def obj_to_yaml(root, stream=None):
     """
@@ -602,6 +595,7 @@ if __name__ == "__main__":
             sys.exit(1)
     parser = argparse.ArgumentParser()
     parser.add_argument("--doctest", action="store_true", help="run documentation tests")
+    parser.add_argument("--test", action="store_true", help="run in test mode, filter exceptions")
     parser.add_argument("--inf", default="xml", help="input format, one of: xml, yml, evt (default: xml)")
     parser.add_argument("--outf", default="xml", help="output format, one of: xml, yml, evt, py (default: xml)")
     parser.add_argument("--pretty", action='store_true', help="pretty parse/unparse")
@@ -621,22 +615,29 @@ if __name__ == "__main__":
 
     if args.inf == "xml":
         if args.filter == "evt":
-            try:
+            if not args.test:
                 evts = xml_to_events(args.input)
-            except Exception as e:
-                evts = events_from_obj({ "exception": str(e).encode().decode()})
+            else:
+                try:
+                    evts = xml_to_events(args.input)
+                except Exception as e:
+                    evts = events_from_obj({ "exception": str(e).encode().decode()})
         else:
-            try:
+            if not args.test:
                 root = xml_to_obj(args.input, strip_space=args.pretty, fold_dict=args.pretty)
-            except Exception as e:
-                root = { "exception": str(e).encode().decode()}
+            else:
+                try:
+                    root = xml_to_obj(args.input, strip_space=args.pretty, fold_dict=args.pretty)
+                except Exception as e:
+                    root = { "exception": str(e).encode().decode()}
     elif args.inf == "yml": root = obj_from_yaml(args.input)
     if args.outf == "xml":
         if args.filter == "evt":
             xml_from_events(evts, args.output)
         else:
             xml_from_obj(root, args.output, pretty=args.pretty)
-    elif args.outf == "yml": obj_to_yaml(root, args.output)
+    elif args.outf == "yml":
+        obj_to_yaml(root, args.output)
     elif args.outf == "py":
         if args.filter == "obj":
             args.output.write(str(root))

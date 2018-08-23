@@ -44,6 +44,7 @@ namespace-1.xml \
 entity-1.xml \
 entity-2.xml \
 entity-3.xml \
+unicode-1.xml
 
 XMLPLAIN=../xmlplain.py
 
@@ -91,44 +92,44 @@ ref-pxmls: $(REF_PXMLS)
 
 
 $(CHECK_EVTS): %.evt.chk: %.xml
-	$(XMLPLAIN) --filter evt $*.xml $*.xml.evt.out
+	$(XMLPLAIN) --test --filter evt $*.xml $*.xml.evt.out
 	diff $*.xml.ref $*.xml.evt.out
-	$(XMLPLAIN) --filter evt $*.xml.evt.out $*.xml.evt.2.out
+	$(XMLPLAIN) --test --filter evt $*.xml.evt.out $*.xml.evt.2.out
 	diff $*.xml.ref $*.xml.evt.2.out
 
 $(CHECK_OBJS): %.obj.chk: %.xml
-	$(XMLPLAIN) --filter obj $*.xml $*.xml.obj.out
+	$(XMLPLAIN) --test --filter obj $*.xml $*.xml.obj.out
 	diff $*.xml.ref $*.xml.obj.out
-	$(XMLPLAIN) --filter obj $*.xml.obj.out $*.xml.obj.2.out
+	$(XMLPLAIN) --test --filter obj $*.xml.obj.out $*.xml.obj.2.out
 	diff $*.xml.ref $*.xml.obj.2.out
 
 $(CHECK_YMLS): %.yml.chk: %.xml
-	$(XMLPLAIN) --filter obj --outf yml $*.xml $*.yml.out
+	$(XMLPLAIN) --test --filter obj --outf yml $*.xml $*.yml.out
 	diff $*.yml.ref $*.yml.out
 
 $(CHECK_PYMLS): %.p.yml.chk: %.xml
-	$(XMLPLAIN) --pretty --filter obj --outf yml $*.xml $*.p.yml.out
+	$(XMLPLAIN) --test --pretty --filter obj --outf yml $*.xml $*.p.yml.out
 	diff $*.p.yml.ref $*.p.yml.out
-	$(XMLPLAIN) --filter obj --inf yml --outf yml $*.p.yml.out $*.p.yml.2.out
+	$(XMLPLAIN) --test --filter obj --inf yml --outf yml $*.p.yml.out $*.p.yml.2.out
 	diff $*.p.yml.ref $*.p.yml.2.out
 
 $(CHECK_PXMLS): %.p.xml.chk: %.xml
-	$(XMLPLAIN) --pretty --filter obj $*.xml $*.p.xml.out
+	$(XMLPLAIN) --test --pretty --filter obj $*.xml $*.p.xml.out
 	diff $*.p.xml.ref $*.p.xml.out
-	$(XMLPLAIN) --pretty --filter obj $*.p.xml.out $*.p.xml.2.out
+	$(XMLPLAIN) --test --pretty --filter obj $*.p.xml.out $*.p.xml.2.out
 	diff $*.p.xml.ref $*.p.xml.2.out
 
 $(REF_XMLS): %.xml.ref: .FORCE
-	$(XMLPLAIN) --filter evt $*.xml $*.xml.ref
+	$(XMLPLAIN) --test --filter evt $*.xml $*.xml.ref
 
 $(REF_YMLS): %.yml.ref: .FORCE
-	$(XMLPLAIN) --filter obj --outf yml $*.xml $*.yml.ref
+	$(XMLPLAIN) --test --filter obj --outf yml $*.xml $*.yml.ref
 
 $(REF_PYMLS): %.p.yml.ref: .FORCE
-	$(XMLPLAIN) --pretty --filter obj --outf yml $*.xml $*.p.yml.ref
+	$(XMLPLAIN) --test --pretty --filter obj --outf yml $*.xml $*.p.yml.ref
 
 $(REF_PXMLS): %.p.xml.ref: .FORCE
-	$(XMLPLAIN) --pretty --filter obj $*.xml $*.p.xml.ref
+	$(XMLPLAIN) --test --pretty --filter obj $*.xml $*.p.xml.ref
 
 .FORCE:
 
