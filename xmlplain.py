@@ -111,7 +111,7 @@ not the right usage for this module. Fill an issue if unsure.
 
 from __future__ import print_function
 
-__version__ = '1.1.0'
+__version__ = '1.2.0'
 
 import yaml, sys, xml, io
 import contextlib
