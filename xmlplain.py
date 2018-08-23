@@ -122,7 +122,7 @@ except ImportError:
     from ordereddict import OrderedDict
 
 
-def xml_to_events(stream, evt_receiver=None, encoding="UTF-8"):
+def xml_to_events(inf, handler=None, encoding="UTF-8"):
     """
     Generates XML events tuples from the input stream.
 
@@ -134,12 +134,12 @@ def xml_to_events(stream, evt_receiver=None, encoding="UTF-8"):
     the start element event.
     The XML stresm is parsed with xml.sax.make_parser().
 
-    :param stream: the input stream
-    :param evt_receiver: a receiver implementing the append() method or None,
+    :param inf: the input stream
+    :param handler: events receiver implementing the append() method or None,
       in which case a new list will be generated
     :param encoding: encoding used whebn the input is a bytes string
 
-    :return: returns the evt_receiver or the generated list
+    :return: returns the handler or the generated list
 
     Events are:
     - ("[", ("",)) for the document start
@@ -154,38 +154,38 @@ def xml_to_events(stream, evt_receiver=None, encoding="UTF-8"):
     .. seealso: xml_from_events(), xml.sax.parse()
     """
     class EventGenerator(xml.sax.ContentHandler):
-        def __init__(self, evt_receiver):
-            self.evt_receiver = evt_receiver
+        def __init__(self, handler):
+            self.handler = handler
         def startElement(self, name, attrs):
-            self.evt_receiver.append(("<", (name,)))
+            self.handler.append(("<", (name,)))
             # Enforce a stable order as sax attributes are unordered
             for attr in sorted(attrs.keys()):
-                evt_receiver.append(("@", (attr, attrs[attr])))
+                handler.append(("@", (attr, attrs[attr])))
         def endElement(self, name):
-            self.evt_receiver.append((">", (name,)))
+            self.handler.append((">", (name,)))
         def startDocument(self):
-            self.evt_receiver.append(("[", ("",)))
+            self.handler.append(("[", ("",)))
         def endDocument(self):
-            self.evt_receiver.append(("]", ("",)))
+            self.handler.append(("]", ("",)))
         def characters(self, content):
-            self.evt_receiver.append(("|", (content,)))
+            self.handler.append(("|", (content,)))
         def ignorableWhiteSpace(self, whitespace):
-            self.evt_receiver.append(("#", (whitespace,)))
+            self.handler.append(("#", (whitespace,)))
     class EntityResolver(xml.sax.handler.EntityResolver):
         def resolveEntity(self, publicId, systemId):
             raise Exception("invalid system entity found: (%s, %s)" % (publicId, systemId))
-    if evt_receiver == None: evt_receiver = []
+    if handler == None: handler = []
     parser = xml.sax.make_parser()
     parser.setFeature(xml.sax.handler.feature_namespaces, False)
     parser.setFeature(xml.sax.handler.feature_namespace_prefixes, False)
     parser.setFeature(xml.sax.handler.feature_external_ges, True)
     parser.setEntityResolver(EntityResolver())
-    parser.setContentHandler(EventGenerator(evt_receiver))
-    parser.parse(stream)
-    return evt_receiver
+    parser.setContentHandler(EventGenerator(handler))
+    parser.parse(inf)
+    return handler
 
 
-def xml_from_events(evts, stream, encoding='UTF-8'):
+def xml_from_events(events, outf, encoding='UTF-8'):
     """
     Outputs the XML document from the events tuples.
 
@@ -193,8 +193,8 @@ def xml_from_events(evts, stream, encoding='UTF-8'):
     generated a well formed XML document.
     The XML output is generated through xml.saxutils.XMLGenerator().
 
-    :param evts: events tuples list or iterator
-    :param stream: output file stream
+    :param events: events tuples list or iterator
+    :param outf: output file stream
     :param encoding: output encoding
 
     .. note: unknown events types are ignored
@@ -243,13 +243,13 @@ def xml_from_events(evts, stream, encoding='UTF-8'):
                 content = content.replace(k, v)
             if not self.binary: content = content.decode(self.input_encoding)
             return self.parent.write(content)
-    writer = QuotingWriter(stream, encoding=encoding)
+    writer = QuotingWriter(outf, encoding=encoding)
     generator = xml.sax.saxutils.XMLGenerator(writer, encoding=encoding)
     generator = SaxGenerator(generator)
-    for evt in evts: generator.append(evt)
+    for evt in events: generator.append(evt)
 
 
-def xml_to_obj(stream, encoding="UTF-8", strip_space=False, fold_dict=False):
+def xml_to_obj(inf, encoding="UTF-8", strip_space=False, fold_dict=False):
     """
     Generate an plain object representation from the XML input.
 
@@ -272,7 +272,7 @@ def xml_to_obj(stream, encoding="UTF-8", strip_space=False, fold_dict=False):
     Generally one would use this in conjonction with pretty=true
     when emitting back the object to XML with xml_from_obj().
 
-    :param stream: the input XML file stream
+    :param inf: the input XML file stream
     :param encoding: encoding used when the input is bytes string
     :param strip_space: strip spaces from non-leaf text content
     :param fold_dict: optimized unambiguous lists of dict into ordered dicts
@@ -381,10 +381,10 @@ def xml_to_obj(stream, encoding="UTF-8", strip_space=False, fold_dict=False):
                 self.append_content(value[0])
             elif kind == '#':
                 pass
-    return xml_to_events(stream, ObjGenerator(strip_space=strip_space, fold_dict=fold_dict), encoding=encoding).get_value()
+    return xml_to_events(inf, ObjGenerator(strip_space=strip_space, fold_dict=fold_dict), encoding=encoding).get_value()
 
 
-def events_filter_pretty(events, evt_receiver=None, indent="  "):
+def events_filter_pretty(events, handler=None, indent="  "):
     """
     Augment an XML event list for pretty printing.
 
@@ -394,61 +394,62 @@ def events_filter_pretty(events, evt_receiver=None, indent="  "):
     suitable for xml_from_events().
 
     :param events: the input XML events stream
-    :param evt_receiver: the new events receiver or None for newly generated list
+    :param handler: events receiver implementing the append() method or None,
+      in which case a new list will be generated
     :param indent: the base indent string, defaults to 2-space indent
 
-    :return: the evt_receiver if not None or the newly created events list
+    :return: the handler if not None or the newly created events list
 
     .. seealso: xml_from_event()
     """
     class EventFilterPretty():
-        def __init__(self, evt_receiver, indent="  "):
-            self.evt_receiver = evt_receiver
+        def __init__(self, handler, indent="  "):
+            self.handler = handler
             self.indent = indent
-        def filter(self, evts):
-            evts = iter(evts)
+        def filter(self, events):
+            events = iter(events)
             lookahead = []
             depth = 0
             while True:
                 if len(lookahead) == 0:
                     while True:
-                        e = next(evts, None)
+                        e = next(events, None)
                         if e == None: break
                         lookahead.append(e)
                         if e[0] in [">", "]"]: break
                     if len(lookahead) == 0: break
                 kinds = list(next(iter(zip(*lookahead))))
                 if kinds[0] == "<" and not "<" in kinds[1:]:
-                    if depth > 0: self.evt_receiver.append(('#', ('\n',)))
-                    self.evt_receiver.append(('#', (self.indent * depth,)))
-                    while lookahead[0][0] != ">": self.evt_receiver.append(lookahead.pop(0))
-                    self.evt_receiver.append(lookahead.pop(0))
-                    if depth == 0: self.evt_receiver.append(('#', ('\n',)))
+                    if depth > 0: self.handler.append(('#', ('\n',)))
+                    self.handler.append(('#', (self.indent * depth,)))
+                    while lookahead[0][0] != ">": self.handler.append(lookahead.pop(0))
+                    self.handler.append(lookahead.pop(0))
+                    if depth == 0: self.handler.append(('#', ('\n',)))
                 else:
                     if kinds[0] == "<":
-                        if depth > 0: self.evt_receiver.append(('#', ('\n',)))
-                        self.evt_receiver.append(('#', (self.indent * depth,)))
-                        self.evt_receiver.append(lookahead.pop(0))
+                        if depth > 0: self.handler.append(('#', ('\n',)))
+                        self.handler.append(('#', (self.indent * depth,)))
+                        self.handler.append(lookahead.pop(0))
                         depth += 1
                     elif kinds[0] == ">":
                         depth -= 1
-                        self.evt_receiver.append(('#', ('\n',)))
-                        self.evt_receiver.append(('#', (self.indent * depth,)))
-                        self.evt_receiver.append(lookahead.pop(0))
-                        if depth == 0: self.evt_receiver.append(('#', ('\n',)))
+                        self.handler.append(('#', ('\n',)))
+                        self.handler.append(('#', (self.indent * depth,)))
+                        self.handler.append(lookahead.pop(0))
+                        if depth == 0: self.handler.append(('#', ('\n',)))
                     elif kinds[0] == "|":
-                        self.evt_receiver.append(('#', ('\n',)))
-                        self.evt_receiver.append(('#', (self.indent * depth,)))
-                        self.evt_receiver.append(lookahead.pop(0))
+                        self.handler.append(('#', ('\n',)))
+                        self.handler.append(('#', (self.indent * depth,)))
+                        self.handler.append(lookahead.pop(0))
                     else:
-                        self.evt_receiver.append(lookahead.pop(0))
-            assert(next(evts, None) == None) # assert all events are consummed
-    if evt_receiver == None: evt_receiver = []
-    EventFilterPretty(evt_receiver).filter(events)
-    return evt_receiver
+                        self.handler.append(lookahead.pop(0))
+            assert(next(events, None) == None) # assert all events are consummed
+    if handler == None: handler = []
+    EventFilterPretty(handler).filter(events)
+    return handler
 
 
-def events_from_obj(root, evt_receiver=None):
+def events_from_obj(root, handler=None):
     """
     Creates an XML events stream from plain object.
 
@@ -457,23 +458,24 @@ def events_from_obj(root, evt_receiver=None):
     method to the receiver or to a newly created list.
 
     :param root: root of the XML plain object
-    :param evt_receiver: the receiver implementing the append method or None
+    :param handler: events receiver implementing the append() method or None,
+      in which case a new list will be generated
 
-    :return: the receiver if not None or the created events list
+    :return: the handler if not None or the created events list
 
     .. seealso: xml_from_events()
     """
     class EventGenerator():
-        def __init__(self, evt_receiver):
-            self.evt_receiver = evt_receiver
+        def __init__(self, handler):
+            self.handler = handler
         def gen_content(self, token):
-            self.evt_receiver.append(('|', (token,)))
+            self.handler.append(('|', (token,)))
         def gen_elt(self, name, children):
-            self.evt_receiver.append(('<', (name,)))
+            self.handler.append(('<', (name,)))
             self.gen_attrs_or_elts(children)
-            self.evt_receiver.append(('>', (name,)))
+            self.handler.append(('>', (name,)))
         def gen_attr(self, name, value):
-            self.evt_receiver.append(('@', (name, value)))
+            self.handler.append(('@', (name, value)))
         def gen_attr_or_elt(self, name, children):
             if name[0] == "@":
                 self.gen_attr(name[1:], children)
@@ -489,15 +491,15 @@ def events_from_obj(root, evt_receiver=None):
             assert(isinstance(root, dict))
             assert(len(root.items()) == 1)
             (name, children) = list(root.items())[0]
-            self.evt_receiver.append(('[', ("",)))
+            self.handler.append(('[', ("",)))
             self.gen_elt(name, children)
-            self.evt_receiver.append((']', ("",)))
-    if evt_receiver == None: evt_receiver = []
-    EventGenerator(evt_receiver).generate_from(root)
-    return evt_receiver
+            self.handler.append((']', ("",)))
+    if handler == None: handler = []
+    EventGenerator(handler).generate_from(root)
+    return handler
 
 
-def xml_from_obj(root, stream, encoding='UTF-8', pretty=True, indent="  "):
+def xml_from_obj(root, outf, encoding='UTF-8', pretty=True, indent="  "):
     """
     Generate a XML output from a plain object
 
@@ -506,18 +508,18 @@ def xml_from_obj(root, stream, encoding='UTF-8', pretty=True, indent="  "):
     This function does the opposite of xml_to_obj().
 
     :param root: the root of the plain object
-    :param stream: the output file stream
+    :param outf: the output file stream
     :param encoding: the encoding to be used (default to "UTF-8")
     :param pretty: does indentation when True
     :param indent: base indent string (default to 2-space)
 
     .. seealso xml_to_obj()
     """
-    evts = events_from_obj(root)
-    if pretty: evts = events_filter_pretty(evts, indent=indent)
-    xml_from_events(evts, stream, encoding=encoding)
+    events = events_from_obj(root)
+    if pretty: events = events_filter_pretty(events, indent=indent)
+    xml_from_events(events, outf, encoding=encoding)
 
-def obj_to_yaml(root, stream=None):
+def obj_to_yaml(root, outf=None):
     """
     Output an XML plain object to yaml.
 
@@ -534,7 +536,7 @@ def obj_to_yaml(root, stream=None):
     needs an editable YAML view of the XML plain object.
 
     :param root: root of the plain object to dump
-    :stream: optional stream or None for generating a string
+    :param outf: optional stream or None for generating a string
     :return: None or the generated string if stream is None
     """
     def dict_representer(dumper, data):
@@ -551,10 +553,10 @@ def obj_to_yaml(root, stream=None):
     if sys.hexversion < 0x03000000: yaml.add_representer(unicode, str_presenter)
     yaml.add_representer(tuple, tuple_representer)
 
-    return yaml.dump(root, stream, allow_unicode=True, default_flow_style=False)
+    return yaml.dump(root, outf, allow_unicode=True, default_flow_style=False)
 
 
-def obj_from_yaml(stream):
+def obj_from_yaml(inf):
     """
     Read a YAML object, possibly holding a XML plain object.
 
@@ -563,7 +565,7 @@ def obj_from_yaml(stream):
     OrderedDict such that the XML plain object elements
     are kept in order.
 
-    :param stream: input YMAL file stream or string
+    :param inf: input YMAL file stream or string
     :return: the constructed plain object
     """
     # load in ordered dict to keep fields ordered
@@ -577,7 +579,7 @@ def obj_from_yaml(stream):
     OrderedLoader.add_constructor(
         yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
         construct_mapping)
-    return yaml.load(stream, OrderedLoader)
+    return yaml.load(inf, OrderedLoader)
 
 
 
@@ -616,12 +618,12 @@ if __name__ == "__main__":
     if args.inf == "xml":
         if args.filter == "evt":
             if not args.test:
-                evts = xml_to_events(args.input)
+                events = xml_to_events(args.input)
             else:
                 try:
-                    evts = xml_to_events(args.input)
+                    events = xml_to_events(args.input)
                 except Exception as e:
-                    evts = events_from_obj({ "exception": str(e).encode().decode()})
+                    events = events_from_obj({ "exception": str(e).encode().decode()})
         else:
             if not args.test:
                 root = xml_to_obj(args.input, strip_space=args.pretty, fold_dict=args.pretty)
@@ -633,7 +635,7 @@ if __name__ == "__main__":
     elif args.inf == "yml": root = obj_from_yaml(args.input)
     if args.outf == "xml":
         if args.filter == "evt":
-            xml_from_events(evts, args.output)
+            xml_from_events(events, args.output)
         else:
             xml_from_obj(root, args.output, pretty=args.pretty)
     elif args.outf == "yml":
@@ -642,8 +644,8 @@ if __name__ == "__main__":
         if args.filter == "obj":
             args.output.write(str(root))
         else:
-            args.output.write(str(evts))
+            args.output.write(str(events))
     elif args.outf == "evt":
         if args.filter == "obj":
-            evts = events_from_obj(root)
-        args.output.write(obj_to_yaml(evts))
+            events = events_from_obj(root)
+        args.output.write(obj_to_yaml(events))
