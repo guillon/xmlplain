@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Welcome to xmlplain’s documentation! &#8212; xmlplain 1.0.2 documentation</title>
+    <title>Welcome to xmlplain’s documentation! &#8212; xmlplain 1.1.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -46,9 +46,15 @@ files as YAML, and emit XML output back.</p>
 for comments and if requested spaces between elements.</p>
 <p>Note that there are alternative modules with nearly the same
 functionality, but none of them both provide simple plain objects
-and preserve the initial XML content even for non structured XML.</p>
-<p>WARNING: the implementation does not support XML namespaces
-and entity location. If this is found useful, please add an issue.</p>
+and preserve the initial XML content for non structured XML.</p>
+<p>XML namespaces are preserved for attributes/elements
+and re-emitted as is.</p>
+<p>WARNING: from the original XML documents, DTD specification,
+XML comments and processing entities will be discarded.
+Also system external entities are not allowed and will
+generate an exception.
+If one needs some of these features, it’s probably
+not the right usage for this module. Fill an issue if unsure.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -210,20 +216,19 @@ needs an editable YAML view of the XML plain object.</p>
 
 <dl class="function">
 <dt id="xmlplain.xml_from_events">
-<code class="descclassname">xmlplain.</code><code class="descname">xml_from_events</code><span class="sig-paren">(</span><em>evts</em>, <em>outf=&lt;_io.TextIOWrapper name='&lt;stdout&gt;' mode='w' encoding='UTF-8'&gt;</em>, <em>encoding='UTF-8'</em>, <em>quoting=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/xmlplain.html#xml_from_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#xmlplain.xml_from_events" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">xmlplain.</code><code class="descname">xml_from_events</code><span class="sig-paren">(</span><em>evts</em>, <em>stream</em>, <em>encoding='UTF-8'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/xmlplain.html#xml_from_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#xmlplain.xml_from_events" title="Permalink to this definition">¶</a></dt>
 <dd><p>Outputs the XML document from the events tuples.</p>
 <p>From the given events tuples lists as specified in xml_to_events(),
-generated a well formed XML document.</p>
+generated a well formed XML document.
+The XML output is generated through xml.saxutils.XMLGenerator().</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>evts</strong> – events tuples list or iterator</li>
-<li><strong>outf</strong> – output file stream passed to xml.saxutils.XMLGenerator()</li>
-<li><strong>encoding</strong> – output encoding passed to xml.saxutils.XMLGenerator()</li>
-<li><strong>quoting</strong> – a mapping str -&gt; str for quoting output content or None,
-the default is the map: {} (i.e. no quoting)</li>
+<li><strong>stream</strong> – output file stream</li>
+<li><strong>encoding</strong> – output encoding</li>
 </ul>
 </td>
 </tr>
@@ -233,17 +238,18 @@ the default is the map: {} (i.e. no quoting)</li>
 
 <dl class="function">
 <dt id="xmlplain.xml_from_obj">
-<code class="descclassname">xmlplain.</code><code class="descname">xml_from_obj</code><span class="sig-paren">(</span><em>root</em>, <em>outf=&lt;_io.TextIOWrapper name='&lt;stdout&gt;' mode='w' encoding='UTF-8'&gt;</em>, <em>encoding='UTF-8'</em>, <em>pretty=True</em>, <em>indent='  '</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/xmlplain.html#xml_from_obj"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#xmlplain.xml_from_obj" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate a XML file from an XML plain object</p>
-<p>Generates to the given stream the validated XML output for the
-plain object. This function does the opposite of xml_to_obj().</p>
+<code class="descclassname">xmlplain.</code><code class="descname">xml_from_obj</code><span class="sig-paren">(</span><em>root</em>, <em>stream</em>, <em>encoding='UTF-8'</em>, <em>pretty=True</em>, <em>indent='  '</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/xmlplain.html#xml_from_obj"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#xmlplain.xml_from_obj" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a XML output from a plain object</p>
+<p>Generates to the XML representation for the plain object as
+generated by this module..
+This function does the opposite of xml_to_obj().</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>root</strong> – the root of the plain object</li>
-<li><strong>outf</strong> – the output file stream</li>
+<li><strong>stream</strong> – the output file stream</li>
 <li><strong>encoding</strong> – the encoding to be used (default to “UTF-8”)</li>
 <li><strong>pretty</strong> – does indentation when True</li>
 <li><strong>indent</strong> – base indent string (default to 2-space)</li>
@@ -256,24 +262,24 @@ plain object. This function does the opposite of xml_to_obj().</p>
 
 <dl class="function">
 <dt id="xmlplain.xml_to_events">
-<code class="descclassname">xmlplain.</code><code class="descname">xml_to_events</code><span class="sig-paren">(</span><em>inf</em>, <em>evt_receiver=None</em>, <em>quoting=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/xmlplain.html#xml_to_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#xmlplain.xml_to_events" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">xmlplain.</code><code class="descname">xml_to_events</code><span class="sig-paren">(</span><em>stream</em>, <em>evt_receiver=None</em>, <em>encoding='UTF-8'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/xmlplain.html#xml_to_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#xmlplain.xml_to_events" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates XML events tuples from the input stream.</p>
 <p>The generated events consist of pairs: (type, value)
 where type is a single char identifier for the event and
 value is a variable length tuple.
 Events correspond to xml.sax events with the exception that
 attributes are generated as events instead of being part of
-the start element event.</p>
+the start element event.
+The XML stresm is parsed with xml.sax.make_parser().</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>inf</strong> – the input stream (passed to xml.sax.parse())</li>
+<li><strong>stream</strong> – the input stream</li>
 <li><strong>evt_receiver</strong> – a receiver implementing the append() method or None,
 in which case a new list will be generated</li>
-<li><strong>quoting</strong> – a mapping str -&gt; str for quoting input content or None,
-the default is: {“r: “”} (i.e. remove all “r” from the input)</li>
+<li><strong>encoding</strong> – encoding used whebn the input is a bytes string</li>
 </ul>
 </td>
 </tr>
@@ -295,7 +301,7 @@ last start element
 
 <dl class="function">
 <dt id="xmlplain.xml_to_obj">
-<code class="descclassname">xmlplain.</code><code class="descname">xml_to_obj</code><span class="sig-paren">(</span><em>inf</em>, <em>strip_space=False</em>, <em>fold_dict=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/xmlplain.html#xml_to_obj"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#xmlplain.xml_to_obj" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">xmlplain.</code><code class="descname">xml_to_obj</code><span class="sig-paren">(</span><em>stream</em>, <em>encoding='UTF-8'</em>, <em>strip_space=False</em>, <em>fold_dict=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/xmlplain.html#xml_to_obj"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#xmlplain.xml_to_obj" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate an plain object representation from the XML input.</p>
 <p>The representation consists of lists of plain
 elements which are either XML elements as dict
@@ -318,7 +324,8 @@ when emitting back the object to XML with xml_from_obj().</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>inf</strong> – the input XML file stream</li>
+<li><strong>stream</strong> – the input XML file stream</li>
+<li><strong>encoding</strong> – encoding used when the input is bytes string</li>
 <li><strong>strip_space</strong> – strip spaces from non-leaf text content</li>
 <li><strong>fold_dict</strong> – optimized unambiguous lists of dict into ordered dicts</li>
 </ul>
