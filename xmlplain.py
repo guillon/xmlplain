@@ -587,7 +587,6 @@ if __name__ == "__main__":
     import argparse, sys, os
     if "--doctest" in sys.argv:
         import doctest
-        os.chdir(os.path.dirname(__file__))
         test = doctest.testmod()
         if test.failed == 0:
             print("SUCCESS: test python documentation")
@@ -596,6 +595,7 @@ if __name__ == "__main__":
             print("FAILED: test python documentation")
             sys.exit(1)
     parser = argparse.ArgumentParser()
+    parser.add_argument('--version', action='version', version='xmlplain version %s (path: %s, python: %s)' % (__version__, __file__, sys.version.split()[0]))
     parser.add_argument("--doctest", action="store_true", help="run documentation tests")
     parser.add_argument("--test", action="store_true", help="run in test mode, filter exceptions")
     parser.add_argument("--inf", default="xml", help="input format, one of: xml, yml, evt (default: xml)")

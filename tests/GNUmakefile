@@ -61,12 +61,15 @@ CHECK_PXMLS=$(TESTS:%.xml=%.p.xml.chk)
 
 all:
 
-check: check-doc check-evts check-objs check-ymls check-pymls check-pxmls
+check: check-version check-doc check-evts check-objs check-ymls check-pymls check-pxmls
 
 clean:
 	rm -f *.tmp *.out
 
 distclean: clean
+
+check-version:
+	$(XMLPLAIN) --version
 
 check-doc:
 	cd $(TOP) && $(XMLPLAIN) --doctest
@@ -134,4 +137,4 @@ $(REF_PXMLS): %.p.xml.ref: .FORCE
 
 .FORCE:
 
-.PHONY: all ref check clen distclean ref-evts ref-xmls ref-pxmls ref-ymls ref-pymls check-evts $(CHECK_EVTS) check-objs $(CHECK_OBJS) check-pxmls $(CHECK_PXMLS) check-ymls $(CHECK_YMLS) check-pymls $(CHECK_PYMLS)
+.PHONY: all ref check clen distclean ref-evts ref-xmls ref-pxmls ref-ymls ref-pymls check-evts $(CHECK_EVTS) check-objs $(CHECK_OBJS) check-pxmls $(CHECK_PXMLS) check-ymls $(CHECK_YMLS) check-pymls $(CHECK_PYMLS) check-doc check-version
