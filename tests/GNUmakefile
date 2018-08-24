@@ -47,7 +47,7 @@ entity-3.xml \
 unicode-1.xml
 
 TOP=$(abspath ..)
-XMLPLAIN=$(TOP)/xmlplain.py)
+XMLPLAIN=$(TOP)/xmlplain.py
 
 REF_XMLS=$(TESTS:%.xml=%.xml.ref)
 REF_YMLS=$(TESTS:%.xml=%.yml.ref)
