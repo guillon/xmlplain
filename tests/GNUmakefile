@@ -46,8 +46,17 @@ entity-2.xml \
 entity-3.xml \
 unicode-1.xml
 
-TOP=$(abspath ..)
-XMLPLAIN=$(TOP)/xmlplain.py
+srcdir=$(abspath ..)
+testdir=$(abspath .)
+XMLPLAIN=$(srcdir)/xmlplain.py
+
+COVERAGE_HTML=1
+STRICT_COVERAGE=1
+PYTHON_COVERAGE_DIR=$(abspath $(testdir))/coverage
+COVERAGE_BIN=coverage
+COVERAGE_ENV=env PYTHON_COVERAGE=1 PYTHONPATH=$(PYTHONPATH):$(abspath $(testdir))/coverage PYTHON_COVERAGE_DIR=$(PYTHON_COVERAGE_DIR) 
+
+XMLPLAIN:=env $(COVERAGE_OPTS) $(XMLPLAIN)
 
 REF_XMLS=$(TESTS:%.xml=%.xml.ref)
 REF_YMLS=$(TESTS:%.xml=%.yml.ref)
@@ -61,18 +70,49 @@ CHECK_PXMLS=$(TESTS:%.xml=%.p.xml.chk)
 
 all:
 
-check: check-version check-doc check-evts check-objs check-ymls check-pymls check-pxmls
+check: check-version check-doc check-evts check-objs check-ymls check-pymls check-pxmls check-non-test
 
-clean:
-	rm -f *.tmp *.out
+coverage:
+	$(MAKE) coverage-start
+	$(MAKE) coverage-check
+	$(MAKE) coverage-stop
 
-distclean: clean
+coverage-start:
+	rm -rf $(PYTHON_COVERAGE_DIR)/.coverage* $(PYTHON_COVERAGE_DIR)/coverage.txt && mkdir -p $(PYTHON_COVERAGE_DIR)
+
+coverage-check:
+	$(MAKE) XMLPLAIN="env $(COVERAGE_ENV) $(XMLPLAIN)" check
+
+coverage-stop:
+	cd $(PYTHON_COVERAGE_DIR) && $(COVERAGE_BIN) combine
+	[ "$(COVERAGE_HTML)" = "" ] || (cd $(PYTHON_COVERAGE_DIR) && ./report_coverage_html.sh)
+	cd $(PYTHON_COVERAGE_DIR) && env STRICT_COVERAGE=$(STRICT_COVERAGE) ./check_coverage.sh
+
+clean: clean-coverage
+	rm -f *.tmp *.out *.pyc
+
+distclean: distclean-coverage
+	rm -rf __pycache__
+
+clean-coverage:
+	rm -rf coverage/coverage.txt coverage/.coverage* coverage/html coverage/*.pyc
+
+distclean-coverage: clean-coverage
+	rm -rf coverage/__pycache__
 
 check-version:
 	$(XMLPLAIN) --version
 
 check-doc:
-	cd $(TOP) && $(XMLPLAIN) --doctest
+	cd $(srcdir) && $(XMLPLAIN) --doctest
+
+check-non-test:
+	$(XMLPLAIN) example-1.xml example-1.xml.tmp
+	$(XMLPLAIN) --filter evt example-1.xml example-1.xml.tmp
+	$(XMLPLAIN) --outf py example-1.xml example-1.xml.tmp
+	$(XMLPLAIN) --inf py example-1.xml.tmp example-1.xml.2.tmp
+	$(XMLPLAIN) --outf py --filter evt example-1.xml example-1.xml.tmp
+	$(XMLPLAIN) --inf py --filter evt example-1.xml.tmp example-1.xml.3.tmp
 
 check-evts: $(CHECK_EVTS)
 
@@ -98,29 +138,31 @@ ref-pxmls: $(REF_PXMLS)
 $(CHECK_EVTS): %.evt.chk: %.xml
 	$(XMLPLAIN) --test --filter evt $*.xml $*.xml.evt.out
 	diff $*.xml.ref $*.xml.evt.out
-	$(XMLPLAIN) --test --filter evt $*.xml.evt.out $*.xml.evt.2.out
+	$(XMLPLAIN) --test --string --filter evt $*.xml.evt.out $*.xml.evt.2.out
 	diff $*.xml.ref $*.xml.evt.2.out
 
 $(CHECK_OBJS): %.obj.chk: %.xml
 	$(XMLPLAIN) --test --filter obj $*.xml $*.xml.obj.out
 	diff $*.xml.ref $*.xml.obj.out
-	$(XMLPLAIN) --test --filter obj $*.xml.obj.out $*.xml.obj.2.out
+	$(XMLPLAIN) --test --string --filter obj $*.xml.obj.out $*.xml.obj.2.out
 	diff $*.xml.ref $*.xml.obj.2.out
 
 $(CHECK_YMLS): %.yml.chk: %.xml
 	$(XMLPLAIN) --test --filter obj --outf yml $*.xml $*.yml.out
 	diff $*.yml.ref $*.yml.out
+	$(XMLPLAIN) --test --string --filter obj --inf yml --outf yml $*.yml.out $*.yml.2.out
+	diff $*.yml.ref $*.yml.2.out
 
 $(CHECK_PYMLS): %.p.yml.chk: %.xml
 	$(XMLPLAIN) --test --pretty --filter obj --outf yml $*.xml $*.p.yml.out
 	diff $*.p.yml.ref $*.p.yml.out
-	$(XMLPLAIN) --test --filter obj --inf yml --outf yml $*.p.yml.out $*.p.yml.2.out
+	$(XMLPLAIN) --test --string --binfile --filter obj --inf yml --outf yml $*.p.yml.out $*.p.yml.2.out
 	diff $*.p.yml.ref $*.p.yml.2.out
 
 $(CHECK_PXMLS): %.p.xml.chk: %.xml
 	$(XMLPLAIN) --test --pretty --filter obj $*.xml $*.p.xml.out
 	diff $*.p.xml.ref $*.p.xml.out
-	$(XMLPLAIN) --test --pretty --filter obj $*.p.xml.out $*.p.xml.2.out
+	$(XMLPLAIN) --test --string --binfile --pretty --filter obj $*.p.xml.out $*.p.xml.2.out
 	diff $*.p.xml.ref $*.p.xml.2.out
 
 $(REF_XMLS): %.xml.ref: .FORCE
@@ -137,4 +179,4 @@ $(REF_PXMLS): %.p.xml.ref: .FORCE
 
 .FORCE:
 
-.PHONY: all ref check clen distclean ref-evts ref-xmls ref-pxmls ref-ymls ref-pymls check-evts $(CHECK_EVTS) check-objs $(CHECK_OBJS) check-pxmls $(CHECK_PXMLS) check-ymls $(CHECK_YMLS) check-pymls $(CHECK_PYMLS) check-doc check-version
+.PHONY: all ref check clen distclean ref-evts ref-xmls ref-pxmls ref-ymls ref-pymls check-evts $(CHECK_EVTS) check-objs $(CHECK_OBJS) check-pxmls $(CHECK_PXMLS) check-ymls $(CHECK_YMLS) check-pymls $(CHECK_PYMLS) check-doc check-version check-non-test coverage clean-coverage distclean-coverage coverage-start coverage-check coverage-stop

@@ -46,6 +46,9 @@ check-local: all-local
 check-tests:
 	$(MAKE) -C tests XMLPLAIN="$(XMLPLAIN)" check
 
+coverage:
+	$(MAKE) -C tests XMLPLAIN="$(XMLPLAIN)" coverage
+
 clean: clean-local clean-doc clean-tests
 
 clean-local:
@@ -88,6 +91,7 @@ upload-doc:
 
 requirements:
 	pip install -r requirements.txt
+	pip install coverage
 
 upload-requirements:
 	pip install twine
@@ -98,14 +102,27 @@ doc-requirements:
 self-requirements:
 	pip install --upgrade xmlplain
 
+release-coverage-venv23:
+	$(MAKE) -C tests coverage-start
+	env VIRTUAL_ENV="$$PWD/venv2/bin" \
+	PATH="$$PWD/venv2/bin:$$PATH" \
+	$(MAKE) -C tests coverage-check
+	env VIRTUAL_ENV="$$PWD/venv3/bin" \
+	PATH="$$PWD/venv3/bin:$$PATH" \
+	$(MAKE) -C tests coverage-check
+	env VIRTUAL_ENV="$$PWD/venv3/bin" \
+	PATH="$$PWD/venv3/bin:$$PATH" \
+	$(MAKE) -C tests coverage-stop
+
 release:
 	$(MAKE) distclean
 	$(MAKE) venv2 venv3
+	$(MAKE) venv2-requirements venv3-requirements
+	$(MAKE) release-coverage-venv23
 	$(MAKE) release-venv2 release-venv3
 
 release-venv2 release-venv3: release-%:
 	$(MAKE) $*-requirements
-	$(MAKE) $*-check
 	$(MAKE) $*-bdist
 	[ "$*" != "venv3" ] || $(MAKE) venv3-sdist
 	[ "$*" != "venv3" ] || $(MAKE) venv3-doc-requirements
@@ -157,3 +174,4 @@ distclean-doc: clean-doc
 .PHONY: all-tests check-tests clean-tests disclean-tests
 .PHONY: release release-venv2 release-venv3 release-upload release-check release-check-venv2 release-check-venv3 requirements upload-requirements doc-requirements self-requirements
 .PHONY: venv2-% venv3-%
+.PHONY: coverage release-coverage-venv23

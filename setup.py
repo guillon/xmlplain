@@ -61,7 +61,7 @@ setup(
         'ordereddict', 'PyYAML'
     ]
     ,tests_require=[
-        'ordereddict', 'PyYAML'
+        'ordereddict', 'PyYAML', 'coverage'
     ],
     zip_safe=True
 )

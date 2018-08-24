@@ -106,7 +106,6 @@ not the right usage for this module. Fill an issue if unsure.
       </content>
     </example>
 
-
 """
 
 from __future__ import print_function
@@ -118,7 +117,7 @@ import contextlib
 import xml.sax.saxutils
 try:
     from collections import OrderedDict
-except ImportError:
+except ImportError: # pragma: no cover # python 2.6 only
     from ordereddict import OrderedDict
 
 
@@ -134,7 +133,7 @@ def xml_to_events(inf, handler=None, encoding="UTF-8"):
     the start element event.
     The XML stresm is parsed with xml.sax.make_parser().
 
-    :param inf: the input stream
+    :param inf: input stream file or string or bytestring
     :param handler: events receiver implementing the append() method or None,
       in which case a new list will be generated
     :param encoding: encoding used whebn the input is a bytes string
@@ -170,7 +169,7 @@ def xml_to_events(inf, handler=None, encoding="UTF-8"):
         def characters(self, content):
             self.handler.append(("|", (content,)))
         def ignorableWhiteSpace(self, whitespace):
-            self.handler.append(("#", (whitespace,)))
+            self.handler.append(("#", (whitespace,))) # pragma: no cover # not tested
     class EntityResolver(xml.sax.handler.EntityResolver):
         def resolveEntity(self, publicId, systemId):
             raise Exception("invalid system entity found: (%s, %s)" % (publicId, systemId))
@@ -181,11 +180,21 @@ def xml_to_events(inf, handler=None, encoding="UTF-8"):
     parser.setFeature(xml.sax.handler.feature_external_ges, True)
     parser.setEntityResolver(EntityResolver())
     parser.setContentHandler(EventGenerator(handler))
-    parser.parse(inf)
+    if sys.version_info[0] == 2 and isinstance(inf, unicode):
+        inf = inf.encode(encoding) # pragma: no cover # not tested
+    if sys.version_info[0] >= 3 and isinstance(inf, str):
+        inf = inf.encode(encoding)
+    if isinstance(inf, bytes):
+        src = xml.sax.xmlreader.InputSource()
+        src.setEncoding(encoding)
+        src.setByteStream(io.BytesIO(inf))
+        parser.parse(src)
+    else:
+        parser.parse(inf)
     return handler
 
 
-def xml_from_events(events, outf, encoding='UTF-8'):
+def xml_from_events(events, outf=None, encoding='UTF-8'):
     """
     Outputs the XML document from the events tuples.
 
@@ -194,8 +203,9 @@ def xml_from_events(events, outf, encoding='UTF-8'):
     The XML output is generated through xml.saxutils.XMLGenerator().
 
     :param events: events tuples list or iterator
-    :param outf: output file stream
+    :param outf: output file stream or None for bytestring output
     :param encoding: output encoding
+    :return: created byte string when outf if None
 
     .. note: unknown events types are ignored
     .. seealso: xml_to_events(), xml.sax.saxutils.XMLGenerator()
@@ -243,10 +253,19 @@ def xml_from_events(events, outf, encoding='UTF-8'):
                 content = content.replace(k, v)
             if not self.binary: content = content.decode(self.input_encoding)
             return self.parent.write(content)
+    getvalue = None
+    if outf == None:
+        outf = io.StringIO()
+        getvalue = outf.getvalue
     writer = QuotingWriter(outf, encoding=encoding)
     generator = xml.sax.saxutils.XMLGenerator(writer, encoding=encoding)
     generator = SaxGenerator(generator)
     for evt in events: generator.append(evt)
+    if getvalue:
+        value = getvalue()
+        if sys.version_info[0] == 2 and isinstance(value, unicode):
+            value = value.encode(encoding)
+        return value
 
 
 def xml_to_obj(inf, encoding="UTF-8", strip_space=False, fold_dict=False):
@@ -272,7 +291,7 @@ def xml_to_obj(inf, encoding="UTF-8", strip_space=False, fold_dict=False):
     Generally one would use this in conjonction with pretty=true
     when emitting back the object to XML with xml_from_obj().
 
-    :param inf: the input XML file stream
+    :param inf: input stream file or string or bytestring
     :param encoding: encoding used when the input is bytes string
     :param strip_space: strip spaces from non-leaf text content
     :param fold_dict: optimized unambiguous lists of dict into ordered dicts
@@ -379,7 +398,7 @@ def xml_to_obj(inf, encoding="UTF-8", strip_space=False, fold_dict=False):
                 self.append_attr(value[0], value[1])
             elif kind == '|':
                 self.append_content(value[0])
-            elif kind == '#':
+            elif kind == '#': # pragma: no cover # not tested
                 pass
     return xml_to_events(inf, ObjGenerator(strip_space=strip_space, fold_dict=fold_dict), encoding=encoding).get_value()
 
@@ -499,7 +518,7 @@ def events_from_obj(root, handler=None):
     return handler
 
 
-def xml_from_obj(root, outf, encoding='UTF-8', pretty=True, indent="  "):
+def xml_from_obj(root, outf=None, encoding='UTF-8', pretty=True, indent="  "):
     """
     Generate a XML output from a plain object
 
@@ -508,16 +527,17 @@ def xml_from_obj(root, outf, encoding='UTF-8', pretty=True, indent="  "):
     This function does the opposite of xml_to_obj().
 
     :param root: the root of the plain object
-    :param outf: the output file stream
+    :param outf: output file stream or None for bytestring output
     :param encoding: the encoding to be used (default to "UTF-8")
     :param pretty: does indentation when True
     :param indent: base indent string (default to 2-space)
+    :return: created byte string when outf if None
 
     .. seealso xml_to_obj()
     """
     events = events_from_obj(root)
     if pretty: events = events_filter_pretty(events, indent=indent)
-    xml_from_events(events, outf, encoding=encoding)
+    return xml_from_events(events, outf, encoding=encoding)
 
 def obj_to_yaml(root, outf=None):
     """
@@ -536,22 +556,20 @@ def obj_to_yaml(root, outf=None):
     needs an editable YAML view of the XML plain object.
 
     :param root: root of the plain object to dump
-    :param outf: optional stream or None for generating a string
+    :param outf: output file stream or None for bytestring output
+
     :return: None or the generated string if stream is None
     """
     def dict_representer(dumper, data):
         return dumper.represent_dict(data.items())
-    def tuple_representer(dumper, data):
-        return dumper.represent_list(list(data))
     def str_presenter(dumper, data):
         if data.find('\n') >= 0:  # check for strings with newlines
             return dumper.represent_scalar(
                 'tag:yaml.org,2002:str', data, style='|')
         return dumper.represent_scalar('tag:yaml.org,2002:str', data)
     yaml.add_representer(OrderedDict, dict_representer)
+    if sys.version_info[0] == 2: yaml.add_representer(unicode, str_presenter)
     yaml.add_representer(str, str_presenter)
-    if sys.hexversion < 0x03000000: yaml.add_representer(unicode, str_presenter)
-    yaml.add_representer(tuple, tuple_representer)
 
     return yaml.dump(root, outf, allow_unicode=True, default_flow_style=False)
 
@@ -565,7 +583,7 @@ def obj_from_yaml(inf):
     OrderedDict such that the XML plain object elements
     are kept in order.
 
-    :param inf: input YMAL file stream or string
+    :param inf: input YAML file stream or stringor bytestring
     :return: the constructed plain object
     """
     # load in ordered dict to keep fields ordered
@@ -588,16 +606,13 @@ if __name__ == "__main__":
     if "--doctest" in sys.argv:
         import doctest
         test = doctest.testmod()
-        if test.failed == 0:
-            print("SUCCESS: test python documentation")
-            sys.exit(0)
-        else:
-            print("FAILED: test python documentation")
-            sys.exit(1)
+        sys.exit(0 if test.failed == 0 else 1)
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', action='version', version='xmlplain version %s (path: %s, python: %s)' % (__version__, __file__, sys.version.split()[0]))
     parser.add_argument("--doctest", action="store_true", help="run documentation tests")
     parser.add_argument("--test", action="store_true", help="run in test mode, filter exceptions")
+    parser.add_argument("--string", action="store_true", help="read from or write to string first")
+    parser.add_argument("--binfile", action="store_true", help="read from or write to string first")
     parser.add_argument("--inf", default="xml", help="input format, one of: xml, yml, evt (default: xml)")
     parser.add_argument("--outf", default="xml", help="output format, one of: xml, yml, evt, py (default: xml)")
     parser.add_argument("--pretty", action='store_true', help="pretty parse/unparse")
@@ -605,17 +620,23 @@ if __name__ == "__main__":
     parser.add_argument("input", nargs='?', help="input file or stdin")
     parser.add_argument("output", nargs='?', help="output file or stdout")
     args = parser.parse_args()
-    if args.inf not in ["xml", "yml"]: parser.exit(2, "%s: error: argument to --inf is invalid\n" % parser.prog)
-    if args.outf not in ["xml", "yml", "evt", "py"]: parser.exit(2, "%s: error: argument to --outf is invalid\n" % parser.prog)
+    if args.inf not in ["xml", "yml", "py"]: parser.exit(2, "%s: error: argument to --inf is invalid\n" % parser.prog)
+    if args.outf not in ["xml", "yml", "py"]: parser.exit(2, "%s: error: argument to --outf is invalid\n" % parser.prog)
     if args.filter not in ["obj", "evt"]: parser.exit(2, "%s: error: argument to --filter is invalid\n" % parser.prog)
-    if args.filter == "evt" and args.inf not in ["xml"]: parser.exit(2, "%s: error: input format incompatible withg filter\n" % parser.prog)
-    if args.filter == "evt" and args.outf not in ["xml", "evt", "py"]: parser.exit(2, "%s: error: output format incompatible withg filter\n" % parser.prog)
+    if args.filter == "evt" and args.inf not in ["xml", "py"]: parser.exit(2, "%s: error: input format incompatible with filter\n" % parser.prog)
+    if args.filter == "evt" and args.outf not in ["xml", "py"]: parser.exit(2, "%s: error: output format incompatible with filter\n" % parser.prog)
     if args.input == None or args.input == "-": args.input = sys.stdin
-    else: args.input = open(args.input)
+    else: args.input = open(args.input, "rb") if args.binfile else open(args.input, "r")
     if args.output == None  or args.output == "-": args.output = sys.stdout
-    else: args.output = open(args.output, "w")
+    else: args.output = open(args.output, "wb") if args.binfile else open(args.output, "w")
 
-    if args.inf == "xml":
+    if args.inf == "py":
+        if args.filter == "obj":
+            root = eval(args.input.read())
+        else:
+            events = eval(args.input.read())
+    elif args.inf == "xml":
+        if args.string: args.input = args.input.read()
         if args.filter == "evt":
             if not args.test:
                 events = xml_to_events(args.input)
@@ -623,7 +644,7 @@ if __name__ == "__main__":
                 try:
                     events = xml_to_events(args.input)
                 except Exception as e:
-                    events = events_from_obj({ "exception": str(e).encode().decode()})
+                    events = events_from_obj({ "exception": str(e).encode("utf-8").decode("utf-8")})
         else:
             if not args.test:
                 root = xml_to_obj(args.input, strip_space=args.pretty, fold_dict=args.pretty)
@@ -631,21 +652,30 @@ if __name__ == "__main__":
                 try:
                     root = xml_to_obj(args.input, strip_space=args.pretty, fold_dict=args.pretty)
                 except Exception as e:
-                    root = { "exception": str(e).encode().decode()}
-    elif args.inf == "yml": root = obj_from_yaml(args.input)
+                    root = { "exception": str(e).encode("utf-8").decode("utf-8")}
+    elif args.inf == "yml":
+        if args.string: args.input = args.input.read()
+        root = obj_from_yaml(args.input)
     if args.outf == "xml":
-        if args.filter == "evt":
-            xml_from_events(events, args.output)
+        if args.filter == "obj":
+            if args.string:
+                string = xml_from_obj(root, outf=None, pretty=args.pretty)
+                if sys.version_info[0] >= 3 and args.binfile: string = string.encode("utf-8")
+                args.output.write(string)
+            else:
+                xml_from_obj(root, args.output, pretty=args.pretty)
         else:
-            xml_from_obj(root, args.output, pretty=args.pretty)
+            xml_from_events(events, args.output)
     elif args.outf == "yml":
-        obj_to_yaml(root, args.output)
+        if args.filter == "obj":
+            if args.string:
+                string = obj_to_yaml(root, outf=None)
+                if sys.version_info[0] >= 3 and args.binfile: string = string.encode("utf-8")
+                args.output.write(string)
+            else:
+                obj_to_yaml(root, args.output)
     elif args.outf == "py":
         if args.filter == "obj":
             args.output.write(str(root))
         else:
             args.output.write(str(events))
-    elif args.outf == "evt":
-        if args.filter == "obj":
-            events = events_from_obj(root)
-        args.output.write(obj_to_yaml(events))
