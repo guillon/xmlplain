@@ -96,7 +96,7 @@ doc-requirements:
 	pip install sphinx
 
 self-requirements:
-	pip install xmlplain
+	pip install --upgrade xmlplain
 
 release:
 	$(MAKE) distclean
