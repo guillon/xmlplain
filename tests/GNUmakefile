@@ -85,8 +85,8 @@ coverage-check:
 
 coverage-stop:
 	cd $(PYTHON_COVERAGE_DIR) && $(COVERAGE_BIN) combine
-	[ "$(COVERAGE_HTML)" = "" ] || (cd $(PYTHON_COVERAGE_DIR) && ./report_coverage_html.sh)
-	cd $(PYTHON_COVERAGE_DIR) && env STRICT_COVERAGE=$(STRICT_COVERAGE) ./check_coverage.sh
+	[ "$(COVERAGE_HTML)" = "" ] || (cd $(PYTHON_COVERAGE_DIR) && env COVERAGE_BIN="$(COVERAGE_BIN)" ./report_coverage_html.sh)
+	cd $(PYTHON_COVERAGE_DIR) && env COVERAGE_BIN="$(COVERAGE_BIN)" STRICT_COVERAGE=$(STRICT_COVERAGE) ./check_coverage.sh
 
 clean: clean-coverage
 	rm -f *.tmp *.out *.pyc
@@ -138,13 +138,13 @@ ref-pxmls: $(REF_PXMLS)
 $(CHECK_EVTS): %.evt.chk: %.xml
 	$(XMLPLAIN) --test --filter evt $*.xml $*.xml.evt.out
 	diff $*.xml.ref $*.xml.evt.out
-	$(XMLPLAIN) --test --string --filter evt $*.xml.evt.out $*.xml.evt.2.out
+	$(XMLPLAIN) --test --in-process $$'\015' '&#xd;' --out-process '&#xd;' $$'\015' --string --filter evt $*.xml.evt.out $*.xml.evt.2.out
 	diff $*.xml.ref $*.xml.evt.2.out
 
 $(CHECK_OBJS): %.obj.chk: %.xml
 	$(XMLPLAIN) --test --filter obj $*.xml $*.xml.obj.out
 	diff $*.xml.ref $*.xml.obj.out
-	$(XMLPLAIN) --test --string --filter obj $*.xml.obj.out $*.xml.obj.2.out
+	$(XMLPLAIN) --test --in-process $$'\015' '&#xd;' --out-process '&#xd;' $$'\015' --string --filter obj $*.xml.obj.out $*.xml.obj.2.out
 	diff $*.xml.ref $*.xml.obj.2.out
 
 $(CHECK_YMLS): %.yml.chk: %.xml

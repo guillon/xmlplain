@@ -27,13 +27,14 @@ set -o pipefail
 SRCDIR=$(dirname "$(readlink -e "$0")")
 STRICT_COVERAGE="${STRICT_COVERAGE:-0}"
 PYTHON_COVERAGE_DIR="${PYTHON_COVERAGE_DIR:-$PWD}"
+COVERAGE_BIN="${COVERAGE_BIN-coverage}"
 
 [ -d "$PYTHON_COVERAGE_DIR" ]
 
 cd "$PYTHON_COVERAGE_DIR"
 
 # look at uncovered code (not ignoring #pragma uncovered)
-coverage report --rcfile="$SRCDIR"/coverage.rc > coverage.txt
+$COVERAGE_BIN report --rcfile="$SRCDIR"/coverage.rc > coverage.txt
 
 uncovered=$(cat coverage.txt | tail -1 | awk '{print ($3)}')
 

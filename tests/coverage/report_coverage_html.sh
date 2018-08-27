@@ -26,9 +26,10 @@ set -o pipefail
 
 SRCDIR=$(dirname "$(readlink -e "$0")")
 PYTHON_COVERAGE_DIR="${PYTHON_COVERAGE_DIR:-$PWD}"
+COVERAGE_BIN="${COVERAGE_BIN-coverage}"
 
 [ -d "$PYTHON_COVERAGE_DIR" ]
 
 cd "$PYTHON_COVERAGE_DIR"
 
-coverage html -d html --rcfile="$SRCDIR"/coverage.rc
+$COVERAGE_BIN html -d html --rcfile="$SRCDIR"/coverage.rc

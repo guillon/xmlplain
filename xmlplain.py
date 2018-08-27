@@ -121,7 +121,7 @@ except ImportError: # pragma: no cover # python 2.6 only
     from ordereddict import OrderedDict
 
 
-def xml_to_events(inf, handler=None, encoding="UTF-8"):
+def xml_to_events(inf, handler=None, encoding="UTF-8", process_content=None):
     """
     Generates XML events tuples from the input stream.
 
@@ -137,6 +137,8 @@ def xml_to_events(inf, handler=None, encoding="UTF-8"):
     :param handler: events receiver implementing the append() method or None,
       in which case a new list will be generated
     :param encoding: encoding used whebn the input is a bytes string
+    :param process_content: a function to apply to the cdata content (str for
+        python3 or unicode for python2) after the XML reader content generation
 
     :return: returns the handler or the generated list
 
@@ -153,8 +155,9 @@ def xml_to_events(inf, handler=None, encoding="UTF-8"):
     .. seealso: xml_from_events(), xml.sax.parse()
     """
     class EventGenerator(xml.sax.ContentHandler):
-        def __init__(self, handler):
+        def __init__(self, handler, process_content=None):
             self.handler = handler
+            self.process_content = process_content
         def startElement(self, name, attrs):
             self.handler.append(("<", (name,)))
             # Enforce a stable order as sax attributes are unordered
@@ -167,6 +170,8 @@ def xml_to_events(inf, handler=None, encoding="UTF-8"):
         def endDocument(self):
             self.handler.append(("]", ("",)))
         def characters(self, content):
+            if self.process_content != None:
+                content = self.process_content(content)
             self.handler.append(("|", (content,)))
         def ignorableWhiteSpace(self, whitespace):
             self.handler.append(("#", (whitespace,))) # pragma: no cover # not tested
@@ -179,7 +184,7 @@ def xml_to_events(inf, handler=None, encoding="UTF-8"):
     parser.setFeature(xml.sax.handler.feature_namespace_prefixes, False)
     parser.setFeature(xml.sax.handler.feature_external_ges, True)
     parser.setEntityResolver(EntityResolver())
-    parser.setContentHandler(EventGenerator(handler))
+    parser.setContentHandler(EventGenerator(handler, process_content=process_content))
     if sys.version_info[0] == 2 and isinstance(inf, unicode):
         inf = inf.encode(encoding) # pragma: no cover # not tested
     if sys.version_info[0] >= 3 and isinstance(inf, str):
@@ -194,7 +199,7 @@ def xml_to_events(inf, handler=None, encoding="UTF-8"):
     return handler
 
 
-def xml_from_events(events, outf=None, encoding='UTF-8'):
+def xml_from_events(events, outf=None, encoding='UTF-8', process_content=None):
     """
     Outputs the XML document from the events tuples.
 
@@ -205,14 +210,18 @@ def xml_from_events(events, outf=None, encoding='UTF-8'):
     :param events: events tuples list or iterator
     :param outf: output file stream or None for bytestring output
     :param encoding: output encoding
+    :param process_content: a function to apply to the cdata content (str for
+        python3 or unicode for python2) before being processed by the XML
+        writer
     :return: created byte string when outf if None
 
     .. note: unknown events types are ignored
     .. seealso: xml_to_events(), xml.sax.saxutils.XMLGenerator()
     """
     class SaxGenerator():
-        def __init__(self, sax_receiver):
+        def __init__(self, sax_receiver, process_content=None):
             self.sax_receiver = sax_receiver
+            self.process_content = process_content
         def append(self, evt):
             kind, value = evt
             if kind == '[':
@@ -232,7 +241,10 @@ def xml_from_events(events, outf=None, encoding='UTF-8'):
             elif kind == '>':
                 self.sax_receiver.endElement(value[0])
             elif kind == '|':
-                self.sax_receiver.characters(value[0])
+                content = value[0]
+                if self.process_content != None:
+                    content = self.process_content(content)
+                self.sax_receiver.characters(content)
             elif kind == '#':
                 self.sax_receiver.ignorableWhitespace(value[0])
     class QuotingWriter():
@@ -259,7 +271,7 @@ def xml_from_events(events, outf=None, encoding='UTF-8'):
         getvalue = outf.getvalue
     writer = QuotingWriter(outf, encoding=encoding)
     generator = xml.sax.saxutils.XMLGenerator(writer, encoding=encoding)
-    generator = SaxGenerator(generator)
+    generator = SaxGenerator(generator, process_content=process_content)
     for evt in events: generator.append(evt)
     if getvalue:
         value = getvalue()
@@ -268,7 +280,7 @@ def xml_from_events(events, outf=None, encoding='UTF-8'):
         return value
 
 
-def xml_to_obj(inf, encoding="UTF-8", strip_space=False, fold_dict=False):
+def xml_to_obj(inf, encoding="UTF-8", strip_space=False, fold_dict=False, process_content=None):
     """
     Generate an plain object representation from the XML input.
 
@@ -295,6 +307,8 @@ def xml_to_obj(inf, encoding="UTF-8", strip_space=False, fold_dict=False):
     :param encoding: encoding used when the input is bytes string
     :param strip_space: strip spaces from non-leaf text content
     :param fold_dict: optimized unambiguous lists of dict into ordered dicts
+    :param process_content: a function to apply to the cdata content (str for
+        python3 or unicode for python2) after the XML reader content generation
 
     :return: the root of the generated plain object, actually a single key dict
 
@@ -400,7 +414,10 @@ def xml_to_obj(inf, encoding="UTF-8", strip_space=False, fold_dict=False):
                 self.append_content(value[0])
             elif kind == '#': # pragma: no cover # not tested
                 pass
-    return xml_to_events(inf, ObjGenerator(strip_space=strip_space, fold_dict=fold_dict), encoding=encoding).get_value()
+    return xml_to_events(inf, ObjGenerator(strip_space=strip_space,
+                                           fold_dict=fold_dict),
+                         encoding=encoding,
+                         process_content=process_content).get_value()
 
 
 def events_filter_pretty(events, handler=None, indent="  "):
@@ -518,7 +535,7 @@ def events_from_obj(root, handler=None):
     return handler
 
 
-def xml_from_obj(root, outf=None, encoding='UTF-8', pretty=True, indent="  "):
+def xml_from_obj(root, outf=None, encoding='UTF-8', pretty=True, indent="  ", process_content=None):
     """
     Generate a XML output from a plain object
 
@@ -531,13 +548,17 @@ def xml_from_obj(root, outf=None, encoding='UTF-8', pretty=True, indent="  "):
     :param encoding: the encoding to be used (default to "UTF-8")
     :param pretty: does indentation when True
     :param indent: base indent string (default to 2-space)
+    :param process_content: a function to apply to the cdata content (str for
+        python3 or unicode for python2) before being processed by the XML
+        writer
+
     :return: created byte string when outf if None
 
     .. seealso xml_to_obj()
     """
     events = events_from_obj(root)
     if pretty: events = events_filter_pretty(events, indent=indent)
-    return xml_from_events(events, outf, encoding=encoding)
+    return xml_from_events(events, outf, encoding=encoding, process_content=process_content)
 
 def obj_to_yaml(root, outf=None):
     """
@@ -612,6 +633,8 @@ if __name__ == "__main__":
     parser.add_argument("--doctest", action="store_true", help="run documentation tests")
     parser.add_argument("--test", action="store_true", help="run in test mode, filter exceptions")
     parser.add_argument("--string", action="store_true", help="read from or write to string first")
+    parser.add_argument("--in-process", nargs=2, help="2 arguments 'str_in' 'str_out' for processing on read")
+    parser.add_argument("--out-process", nargs=2, help="2 aerguments 'str_in' 'str_out' for processing on write")
     parser.add_argument("--binfile", action="store_true", help="read from or write to string first")
     parser.add_argument("--inf", default="xml", help="input format, one of: xml, yml, evt (default: xml)")
     parser.add_argument("--outf", default="xml", help="output format, one of: xml, yml, evt, py (default: xml)")
@@ -630,6 +653,13 @@ if __name__ == "__main__":
     if args.output == None  or args.output == "-": args.output = sys.stdout
     else: args.output = open(args.output, "wb") if args.binfile else open(args.output, "w")
 
+    in_process = None
+    if args.in_process:
+        in_process = lambda x: x.replace(args.in_process[0], args.in_process[1])
+    out_process = None
+    if args.out_process:
+        out_process = lambda x: x.replace(args.out_process[0], args.out_process[1])
+
     if args.inf == "py":
         if args.filter == "obj":
             root = eval(args.input.read())
@@ -639,18 +669,20 @@ if __name__ == "__main__":
         if args.string: args.input = args.input.read()
         if args.filter == "evt":
             if not args.test:
-                events = xml_to_events(args.input)
+                events = xml_to_events(args.input, process_content=in_process)
             else:
                 try:
-                    events = xml_to_events(args.input)
+                    events = xml_to_events(args.input, process_content=in_process)
                 except Exception as e:
                     events = events_from_obj({ "exception": str(e).encode("utf-8").decode("utf-8")})
         else:
             if not args.test:
-                root = xml_to_obj(args.input, strip_space=args.pretty, fold_dict=args.pretty)
+                root = xml_to_obj(args.input, strip_space=args.pretty, fold_dict=args.pretty,
+                                  process_content=in_process)
             else:
                 try:
-                    root = xml_to_obj(args.input, strip_space=args.pretty, fold_dict=args.pretty)
+                    root = xml_to_obj(args.input, strip_space=args.pretty, fold_dict=args.pretty,
+                                      process_content=in_process)
                 except Exception as e:
                     root = { "exception": str(e).encode("utf-8").decode("utf-8")}
     elif args.inf == "yml":
@@ -659,13 +691,13 @@ if __name__ == "__main__":
     if args.outf == "xml":
         if args.filter == "obj":
             if args.string:
-                string = xml_from_obj(root, outf=None, pretty=args.pretty)
+                string = xml_from_obj(root, outf=None, pretty=args.pretty, process_content=out_process)
                 if sys.version_info[0] >= 3 and args.binfile: string = string.encode("utf-8")
                 args.output.write(string)
             else:
-                xml_from_obj(root, args.output, pretty=args.pretty)
+                xml_from_obj(root, args.output, pretty=args.pretty, process_content=out_process)
         else:
-            xml_from_events(events, args.output)
+            xml_from_events(events, args.output, process_content=out_process)
     elif args.outf == "yml":
         if args.filter == "obj":
             if args.string:
