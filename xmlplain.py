@@ -316,7 +316,7 @@ def xml_to_obj(inf, encoding="UTF-8", strip_space=False, fold_dict=False, proces
 
     >>> import xmlplain, yaml, sys
     >>> root = xmlplain.xml_to_obj(open("tests/example-1.xml"), strip_space=True)
-    >>> yaml.dump(root, sys.stdout, default_flow_style=False)
+    >>> yaml.safe_dump(root, sys.stdout, default_flow_style=False, allow_unicode=True)
     example:
     - doc: 'This is an example for xmlobj documentation. '
     - content:
@@ -581,6 +581,7 @@ def obj_to_yaml(root, outf=None):
 
     :return: None or the generated string if stream is None
     """
+    class LocalDumper(yaml.SafeDumper): pass
     def dict_representer(dumper, data):
         return dumper.represent_dict(data.items())
     def str_presenter(dumper, data):
@@ -588,11 +589,11 @@ def obj_to_yaml(root, outf=None):
             return dumper.represent_scalar(
                 'tag:yaml.org,2002:str', data, style='|')
         return dumper.represent_scalar('tag:yaml.org,2002:str', data)
-    yaml.add_representer(OrderedDict, dict_representer)
-    if sys.version_info[0] == 2: yaml.add_representer(unicode, str_presenter)
-    yaml.add_representer(str, str_presenter)
+    LocalDumper.add_representer(OrderedDict, dict_representer)
+    if sys.version_info[0] == 2: LocalDumper.add_representer(unicode, str_presenter)
+    LocalDumper.add_representer(str, str_presenter)
 
-    return yaml.dump(root, outf, allow_unicode=True, default_flow_style=False)
+    return yaml.dump(root, outf, allow_unicode=True, default_flow_style=False, Dumper=LocalDumper)
 
 
 def obj_from_yaml(inf):
@@ -607,18 +608,13 @@ def obj_from_yaml(inf):
     :param inf: input YAML file stream or stringor bytestring
     :return: the constructed plain object
     """
-    # load in ordered dict to keep fields ordered
-    # https://stackoverflow.com/a/21912744
-    class OrderedLoader(yaml.Loader): pass
-
-    def construct_mapping(loader, node):
+    class LocalLoader(yaml.SafeLoader): pass
+    def map_constructor(loader, node):
         loader.flatten_mapping(node)
         return OrderedDict(loader.construct_pairs(node))
+    LocalLoader.add_constructor('tag:yaml.org,2002:map', map_constructor)
 
-    OrderedLoader.add_constructor(
-        yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
-        construct_mapping)
-    return yaml.load(inf, OrderedLoader)
+    return yaml.load(inf, Loader=LocalLoader)
 
 
 
