@@ -173,8 +173,6 @@ def xml_to_events(inf, handler=None, encoding="UTF-8", process_content=None):
             if self.process_content != None:
                 content = self.process_content(content)
             self.handler.append(("|", (content,)))
-        def ignorableWhiteSpace(self, whitespace):
-            self.handler.append(("#", (whitespace,))) # pragma: no cover # not tested
     class EntityResolver(xml.sax.handler.EntityResolver):
         def resolveEntity(self, publicId, systemId):
             raise Exception("invalid system entity found: (%s, %s)" % (publicId, systemId))
@@ -410,8 +408,6 @@ def xml_to_obj(inf, encoding="UTF-8", strip_space=False, fold_dict=False, proces
                 self.append_attr(value[0], value[1])
             elif kind == '|':
                 self.append_content(value[0])
-            elif kind == '#': # pragma: no cover # not tested
-                pass
     return xml_to_events(inf, ObjGenerator(strip_space=strip_space,
                                            fold_dict=fold_dict),
                          encoding=encoding,
