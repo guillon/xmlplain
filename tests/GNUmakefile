@@ -51,13 +51,11 @@ srcdir=$(abspath ..)
 testdir=$(abspath .)
 XMLPLAIN=$(srcdir)/xmlplain.py
 
+COVERAGE=coverage
+STRICT_COVERAGE=0
 COVERAGE_HTML=1
-STRICT_COVERAGE=1
 PYTHON_COVERAGE_DIR=$(abspath $(testdir))/coverage
-COVERAGE_BIN=coverage
-COVERAGE_ENV=env PYTHON_COVERAGE=1 PYTHONPATH=$(PYTHONPATH):$(abspath $(testdir))/coverage PYTHON_COVERAGE_DIR=$(PYTHON_COVERAGE_DIR) 
-
-XMLPLAIN:=env $(COVERAGE_OPTS) $(XMLPLAIN)
+COVERAGE_ENV=env PYTHON_COVERAGE=1 STRICT_COVERAGE=$(STRICT_COVERAGE) COVERAGE_BIN=$(COVERAGE) PYTHONPATH=$(PYTHONPATH):$(abspath $(testdir))/coverage PYTHON_COVERAGE_DIR=$(PYTHON_COVERAGE_DIR) 
 
 REF_XMLS=$(TESTS:%.xml=%.xml.ref)
 REF_YMLS=$(TESTS:%.xml=%.yml.ref)
@@ -85,9 +83,9 @@ coverage-check:
 	$(MAKE) XMLPLAIN="env $(COVERAGE_ENV) $(XMLPLAIN)" check
 
 coverage-stop:
-	cd $(PYTHON_COVERAGE_DIR) && $(COVERAGE_BIN) combine
-	[ "$(COVERAGE_HTML)" = "" ] || (cd $(PYTHON_COVERAGE_DIR) && env COVERAGE_BIN="$(COVERAGE_BIN)" ./report_coverage_html.sh)
-	cd $(PYTHON_COVERAGE_DIR) && env COVERAGE_BIN="$(COVERAGE_BIN)" STRICT_COVERAGE=$(STRICT_COVERAGE) ./check_coverage.sh
+	cd $(PYTHON_COVERAGE_DIR) && $(COVERAGE) combine
+	[ "$(COVERAGE_HTML)" = "" ] || (cd $(PYTHON_COVERAGE_DIR) && env $(COVERAGE_ENV) ./report_coverage_html.sh)
+	cd $(PYTHON_COVERAGE_DIR) && env $(COVERAGE_ENV) ./check_coverage.sh
 
 clean: clean-coverage
 	rm -f *.tmp *.out *.pyc

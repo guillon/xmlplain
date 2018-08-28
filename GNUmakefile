@@ -28,6 +28,7 @@
 PREFIX=/usr/local
 
 XMLPLAIN=$(abspath xmlplain.py)
+COVERAGE=python-coverage
 
 REPO=https://github.com/guillon/xmlplain
 
@@ -47,7 +48,7 @@ check-tests:
 	$(MAKE) -C tests XMLPLAIN="$(XMLPLAIN)" check
 
 coverage:
-	$(MAKE) -C tests XMLPLAIN="$(XMLPLAIN)" coverage
+	$(MAKE) -C tests XMLPLAIN="$(XMLPLAIN)" COVERAGE="$(COVERAGE)" coverage
 
 clean: clean-local clean-doc clean-tests
 
@@ -112,7 +113,7 @@ release-coverage-venv23:
 	$(MAKE) -C tests coverage-check
 	env VIRTUAL_ENV="$$PWD/venv3/bin" \
 	PATH="$$PWD/venv3/bin:$$PATH" \
-	$(MAKE) -C tests coverage-stop
+	$(MAKE) -C tests STRICT_COVERAGE=1 coverage-stop
 
 release:
 	$(MAKE) distclean
@@ -129,8 +130,15 @@ release-venv2 release-venv3: release-%:
 	[ "$*" != "venv3" ] || $(MAKE) venv3-doc
 
 release-upload:
+	$(MAKE) release-upload-doc
+	$(MAKE) release-upload-pypi
+
+release-upload-pypi:
 	$(MAKE) venv3-upload-requirements
 	$(MAKE) venv3-upload
+
+release-upload-doc:
+	$(MAKE) upload-doc
 
 release-check:
 	$(MAKE) distclean
@@ -138,9 +146,6 @@ release-check:
 	$(MAKE) release-check-venv2 release-check-venv3
 
 release-check-venv2 release-check-venv3: release-check-%:
-	$(MAKE) $*-self-requirements
-	$(MAKE) XMLPLAIN="python -m xmlplain" $*-check
-	$(MAKE) $*
 	$(MAKE) $*-self-requirements
 	$(MAKE) XMLPLAIN="python -m xmlplain" $*-check
 
@@ -172,6 +177,6 @@ distclean-doc: clean-doc
 .PHONY: all-local check-local clean-local distclean-local
 .PHONY: doc clean-doc distclean-doc
 .PHONY: all-tests check-tests clean-tests disclean-tests
-.PHONY: release release-venv2 release-venv3 release-upload release-check release-check-venv2 release-check-venv3 requirements upload-requirements doc-requirements self-requirements
+.PHONY: release release-venv2 release-venv3 release-upload release-upload-pypi release-upload-doc release-check release-check-venv2 release-check-venv3 requirements upload-requirements doc-requirements self-requirements
 .PHONY: venv2-% venv3-%
 .PHONY: coverage release-coverage-venv23
