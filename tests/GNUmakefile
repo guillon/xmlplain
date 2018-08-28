@@ -44,7 +44,8 @@ namespace-1.xml \
 entity-1.xml \
 entity-2.xml \
 entity-3.xml \
-unicode-1.xml
+unicode-1.xml \
+unicode-2.xml
 
 srcdir=$(abspath ..)
 testdir=$(abspath .)
@@ -70,7 +71,7 @@ CHECK_PXMLS=$(TESTS:%.xml=%.p.xml.chk)
 
 all:
 
-check: check-version check-doc check-evts check-objs check-ymls check-pymls check-pxmls check-non-test
+check: check-version check-doc check-evts check-objs check-ymls check-pymls check-pxmls check-non-test check-encoding
 
 coverage:
 	$(MAKE) coverage-start
@@ -114,6 +115,17 @@ check-non-test:
 	$(XMLPLAIN) --outf py --filter evt example-1.xml example-1.xml.tmp
 	$(XMLPLAIN) --inf py --filter evt example-1.xml.tmp example-1.xml.3.tmp
 
+check-encoding:
+	$(XMLPLAIN) --out-encoding iso-8859-1 unicode-1.xml unicode-1.xml.1.tmp
+	$(XMLPLAIN) unicode-1.xml.1.tmp unicode-1.xml.2.tmp
+	diff unicode-1.xml.ref unicode-1.xml.2.tmp
+	$(XMLPLAIN) --out-encoding iso-8859-1 unicode-2.xml unicode-2.xml.1.tmp
+	$(XMLPLAIN) --in-encoding iso-8859-1 unicode-2.xml.1.tmp unicode-2.xml.2.tmp
+	diff unicode-2.xml.ref unicode-2.xml.2.tmp
+	$(XMLPLAIN) --out-encoding iso-8859-1 --outf yml unicode-2.xml unicode-2.yml.1.tmp
+	$(XMLPLAIN) --in-encoding iso-8859-1 --inf yml unicode-2.yml.1.tmp unicode-2.xml.3.tmp
+	diff unicode-2.xml.ref unicode-2.xml.3.tmp
+
 check-evts: $(CHECK_EVTS)
 
 check-objs: $(CHECK_OBJS)
@@ -156,14 +168,22 @@ $(CHECK_YMLS): %.yml.chk: %.xml
 $(CHECK_PYMLS): %.p.yml.chk: %.xml
 	$(XMLPLAIN) --test --pretty --filter obj --outf yml $*.xml $*.p.yml.out
 	diff $*.p.yml.ref $*.p.yml.out
-	$(XMLPLAIN) --test --string --binfile --filter obj --inf yml --outf yml $*.p.yml.out $*.p.yml.2.out
+	$(XMLPLAIN) --test --bin --pretty --filter obj --outf yml $*.xml $*.p.yml.2.out
 	diff $*.p.yml.ref $*.p.yml.2.out
+	$(XMLPLAIN) --test --string --filter obj --inf yml --outf yml $*.p.yml.out $*.p.yml.3.out
+	diff $*.p.yml.ref $*.p.yml.3.out
+	$(XMLPLAIN) --test --string --bin --filter obj --inf yml --outf yml $*.p.yml.out $*.p.yml.4.out
+	diff $*.p.yml.ref $*.p.yml.4.out
 
 $(CHECK_PXMLS): %.p.xml.chk: %.xml
 	$(XMLPLAIN) --test --pretty --filter obj $*.xml $*.p.xml.out
 	diff $*.p.xml.ref $*.p.xml.out
-	$(XMLPLAIN) --test --string --binfile --pretty --filter obj $*.p.xml.out $*.p.xml.2.out
+	$(XMLPLAIN) --test --bin --pretty --filter obj $*.xml $*.p.xml.2.out
 	diff $*.p.xml.ref $*.p.xml.2.out
+	$(XMLPLAIN) --test --string --pretty --filter obj $*.p.xml.out $*.p.xml.3.out
+	diff $*.p.xml.ref $*.p.xml.3.out
+	$(XMLPLAIN) --test --string --bin --pretty --filter obj $*.p.xml.out $*.p.xml.4.out
+	diff $*.p.xml.ref $*.p.xml.4.out
 
 $(REF_XMLS): %.xml.ref: .FORCE
 	$(XMLPLAIN) --test --filter evt $*.xml $*.xml.ref
@@ -179,4 +199,4 @@ $(REF_PXMLS): %.p.xml.ref: .FORCE
 
 .FORCE:
 
-.PHONY: all ref check clen distclean ref-evts ref-xmls ref-pxmls ref-ymls ref-pymls check-evts $(CHECK_EVTS) check-objs $(CHECK_OBJS) check-pxmls $(CHECK_PXMLS) check-ymls $(CHECK_YMLS) check-pymls $(CHECK_PYMLS) check-doc check-version check-non-test coverage clean-coverage distclean-coverage coverage-start coverage-check coverage-stop
+.PHONY: all ref check clen distclean ref-evts ref-xmls ref-pxmls ref-ymls ref-pymls check-evts $(CHECK_EVTS) check-objs $(CHECK_OBJS) check-pxmls $(CHECK_PXMLS) check-ymls $(CHECK_YMLS) check-pymls $(CHECK_PYMLS) check-doc check-version check-non-test check-encoding coverage clean-coverage distclean-coverage coverage-start coverage-check coverage-stop
