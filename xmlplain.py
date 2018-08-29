@@ -142,13 +142,14 @@ def xml_to_events(inf, handler=None, encoding="UTF-8", process_content=None):
 
     :return: returns the handler or the generated list
 
-    Events are:
+    The defined XML events tuples in this module are:
+
     - ("[", ("",)) for the document start
     - ("]", ("",)) for the document end
     - ("<", (elt_name,)) for an element start
     - (">", (elt_name,)) for an element end
     - ("@", (attr_name, attr_value)) for an attribute associated to the
-    last start element
+      last start element
     - ("|", (content,)) for a CDATA string content
     - ("#", (whitespace,)) for an ignorable whitespace string
 
