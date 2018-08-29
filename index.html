@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Welcome to xmlplain’s documentation! &#8212; xmlplain 1.5.0 documentation</title>
+    <title>Welcome to xmlplain’s documentation! &#8212; xmlplain 1.6.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -171,7 +171,7 @@ in which case a new list will be generated</li>
 
 <dl class="function">
 <dt id="xmlplain.obj_from_yaml">
-<code class="descclassname">xmlplain.</code><code class="descname">obj_from_yaml</code><span class="sig-paren">(</span><em>inf</em>, <em>encoding='UTF-8'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/xmlplain.html#obj_from_yaml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#xmlplain.obj_from_yaml" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">xmlplain.</code><code class="descname">obj_from_yaml</code><span class="sig-paren">(</span><em>inf</em>, <em>encoding='UTF-8'</em>, <em>process_string=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/xmlplain.html#obj_from_yaml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#xmlplain.obj_from_yaml" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read a YAML object, possibly holding a XML plain object.</p>
 <p>Returns the XML plain obj from the YAML stream or string.
 The dicts read from the YAML stream are stored as
@@ -184,6 +184,8 @@ are kept in order.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>inf</strong> – input YAML file stream or string or bytestring</li>
 <li><strong>encoding</strong> – encoding of the input when a byte stream or byte string</li>
+<li><strong>process_string</strong> – a function to apply to strings (str for
+python3 or unicode for python2) after the YAML reader input</li>
 </ul>
 </td>
 </tr>
@@ -196,7 +198,7 @@ are kept in order.</p>
 
 <dl class="function">
 <dt id="xmlplain.obj_to_yaml">
-<code class="descclassname">xmlplain.</code><code class="descname">obj_to_yaml</code><span class="sig-paren">(</span><em>root</em>, <em>outf=None</em>, <em>encoding='UTF-8'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/xmlplain.html#obj_to_yaml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#xmlplain.obj_to_yaml" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">xmlplain.</code><code class="descname">obj_to_yaml</code><span class="sig-paren">(</span><em>root</em>, <em>outf=None</em>, <em>encoding='UTF-8'</em>, <em>process_string=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/xmlplain.html#obj_to_yaml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#xmlplain.obj_to_yaml" title="Permalink to this definition">¶</a></dt>
 <dd><p>Output an XML plain object to yaml.</p>
 <p>Output an object to yaml with some specific
 management for OrderedDict, Strings and Tuples.
@@ -215,6 +217,8 @@ needs an editable YAML view of the XML plain object.</p>
 <li><strong>root</strong> – root of the plain object to dump</li>
 <li><strong>outf</strong> – output file stream or None for bytestring output</li>
 <li><strong>encoding</strong> – output bytestring or file stream encoding</li>
+<li><strong>process_string</strong> – a function to apply to strings (str for
+python3 or unicode for python2) before the YAML writer output</li>
 </ul>
 </td>
 </tr>
@@ -313,15 +317,17 @@ python3 or unicode for python2) after the XML reader content generation</li>
 </tr>
 </tbody>
 </table>
-<p>Events are:
-- (“[“, (“”,)) for the document start
-- (“]”, (“”,)) for the document end
-- (“&lt;”, (elt_name,)) for an element start
-- (“&gt;”, (elt_name,)) for an element end
-- (“&#64;”, (attr_name, attr_value)) for an attribute associated to the
-last start element
-- (“|”, (content,)) for a CDATA string content
-- (“#”, (whitespace,)) for an ignorable whitespace string</p>
+<p>The defined XML events tuples in this module are:</p>
+<ul class="simple">
+<li>(“[“, (“”,)) for the document start</li>
+<li>(“]”, (“”,)) for the document end</li>
+<li>(“&lt;”, (elt_name,)) for an element start</li>
+<li>(“&gt;”, (elt_name,)) for an element end</li>
+<li>(“&#64;”, (attr_name, attr_value)) for an attribute associated to the
+last start element</li>
+<li>(“|”, (content,)) for a CDATA string content</li>
+<li>(“#”, (whitespace,)) for an ignorable whitespace string</li>
+</ul>
 </dd></dl>
 
 <dl class="function">
