@@ -160,7 +160,7 @@ $(CHECK_OBJS): %.obj.chk: %.xml
 $(CHECK_YMLS): %.yml.chk: %.xml
 	$(XMLPLAIN) --test --filter obj --outf yml $*.xml $*.yml.out
 	diff $*.yml.ref $*.yml.out
-	$(XMLPLAIN) --test --string --filter obj --inf yml --outf yml $*.yml.out $*.yml.2.out
+	$(XMLPLAIN) --test --in-process $$'\015' '&#xd;' --out-process '&#xd;' $$'\015' --filter obj --inf yml --outf yml $*.yml.out $*.yml.2.out
 	diff $*.yml.ref $*.yml.2.out
 
 $(CHECK_PYMLS): %.p.yml.chk: %.xml
