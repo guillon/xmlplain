@@ -155,7 +155,7 @@ This will install the last release and its dependencies in your user environment
 
 Optionally install at system level with:
 
-    sudo pip install xlmplain
+    sudo pip install xmlplain
 
 
 ## Sources
